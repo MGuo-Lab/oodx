@@ -1,0 +1,6 @@
+.idea
+.DS_Store
+**/__pycache__
+fort.61
+gurobi.log
+.ipynb_checkpoints
