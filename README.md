@@ -3,20 +3,8 @@
   alt="A sumo"
   width=150>
 
-# SUMOMO: Surrogate modelling and optimisation modelling
-SUMOMO is a Python package for surrogate modelling and optimisation modelling.
-
-## Neural networks
-Neural networks are implemented using *PyTorch*.
-
-## Gaussian processes
-Gaussian process regression models are implemented using `GaussianProcessRegressor` from *scikit-learn* whilst Gaussian process classification is implemented using *NumPy*.
-
-## Pyomo formulations
-Each surrogate model formulations is coded as a *Pyomo* Block.
-
-## Application programming interface
-The surrogate modelling with neural networks and Gaussian processes, as well as the *Pyomo* formulations are made available in a single `api` object.
+## sumomo: surrogate modelling and optimisation
+sumomo is a Python package for surrogate modelling and *Pyomo* formulations. Surrogate models include Gaussian processes and neural networks for regression and classification. sumomo enables an entire surrogate modelling workflow followed by abstracted *Pyomo* formulations to be incorporated into larger optimisation problems.
 
 ## Example
 ```python
