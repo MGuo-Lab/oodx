@@ -19,5 +19,7 @@ Each surrogate model formulations is coded as a *Pyomo* Block.
 The surrogate modelling with neural networks and Gaussian processes, as well as the *Pyomo* formulations are made available in a single `api` object.
 
 ## Example
-    import pyomo.environ as pyo
-    from sumomo import api
+```python
+import pyomo.environ as pyo
+from sumomo import api
+```
