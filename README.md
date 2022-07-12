@@ -1,7 +1,7 @@
 <img
   src="sumo.jpg"
   alt="A sumo"
-  style="display: inline-block; margin: 0 auto; max-width: 300px">
+  style="display: inline-block; margin: 0 auto; max-width: 80">
 
 # SUMOMO
 This package enables surrogate modelling and *Pyomo* optimisaton formulations for black box models.
