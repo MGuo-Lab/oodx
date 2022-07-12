@@ -1,5 +1,5 @@
 <img
-  src="sumo.jpg"
+  src="sumo.jpeg"
   alt="A sumo"
   width=100>
 
