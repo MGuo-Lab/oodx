@@ -58,17 +58,17 @@ class BlockFormulation:
         b = self.model.biases
         
         # declare sets
-        layer_nodes = self.model.layer_nodes
-        m.input_nodes = self.model.input_nodes
-        m.output_nodes = self.model.output_nodes
-        activated_nodes = self.model.activated_nodes
-        nodes = set([(i, j) for i in layer_nodes.keys() for j in layer_nodes[i]])
-        m.a_nodes = set([(i, j) for i in activated_nodes.keys() for j in activated_nodes[i]])
-        
+        layer_nodes = {layer: set(range(nodes)) for layer, nodes in enumerate(self.model.layers)}
+        m.input_nodes = layer_nodes.pop(0)
+        m.output_nodes = layer_nodes[ len(layer_nodes) ]
+        hidden_nodes = {layer: node for layer, node in layer_nodes.items() if layer < len(layer_nodes)}
+        nodes = set([(i, j) for i in layer_nodes for j in layer_nodes[i]])
+        m.nodes_activated = set([(i, j) for i in hidden_nodes for j in hidden_nodes[i]])
+    
         # declare variables
         m.inputs = pyo.Var(m.input_nodes, bounds=self.bounds)
         m.z = pyo.Var(nodes)
-        m.a = pyo.Var(m.a_nodes)
+        m.a = pyo.Var(m.nodes_activated)
         m.outputs = pyo.Var(m.output_nodes)
 
         # constraints
@@ -102,7 +102,7 @@ class BlockFormulation:
         m.c = pyo.ConstraintList()
       
         # activated layers return tanh of linear outputs
-        for l, n in m.nn.a_nodes:
+        for l, n in m.nn.nodes_activated:
             m.c.add( m.nn.a[(l, n)] == 1 - 2 / (pyo.exp(2 * m.nn.z[(l, n)]) + 1) )
         
         # connect inputs to general model
@@ -126,7 +126,7 @@ class BlockFormulation:
         m.c = pyo.ConstraintList()
       
         # activated layers return sigmoid of linear outputs
-        for l, n in m.nn.a_nodes:
+        for l, n in m.nn.nodes_activated:
             m.c.add( m.nn.a[(l, n)] == 1 / (1 + pyo.exp(-m.nn.z[(l, n)])) )
         
         # connect inputs to general model
@@ -150,7 +150,7 @@ class BlockFormulation:
         m.c = pyo.ConstraintList()
       
         # activated layers return softplus of linear outputs
-        for l, n in m.nn.a_nodes:
+        for l, n in m.nn.nodes_activated:
             m.c.add( m.nn.a[(l, n)] == pyo.log(1 + pyo.exp(m.nn.z[(l, n)])) )
         
         # connect inputs to general model
@@ -169,13 +169,13 @@ class BlockFormulation:
         # declare variables
         m.inputs = pyo.Var(m.nn.input_nodes, bounds=self.bounds)
         m.outputs = pyo.Var(m.nn.output_nodes)
-        m.y = pyo.Var(m.nn.a_nodes, domain=pyo.Binary)
+        m.y = pyo.Var(m.nn.nodes_activated, domain=pyo.Binary)
 
         # constraints
         m.c = pyo.ConstraintList()
       
         # activated layers return ReLU of linear outputs, big-M formulation
-        for l, n in m.nn.a_nodes:
+        for l, n in m.nn.nodes_activated:
             m.c.add( m.nn.a[(l, n)] >= 0 )
             m.c.add( m.nn.a[(l, n)] >= m.nn.z[(l, n)] )
             m.c.add( m.nn.a[(l, n)] <= 1e6 * m.y[(l, n)] )
@@ -196,10 +196,10 @@ class BlockFormulation:
         b = self.model.biases
         
         # declare sets
-        layer_nodes = self.model.layer_nodes
-        m.input_nodes = self.model.input_nodes
-        m.output_nodes = self.model.output_nodes
-        m.nodes = set([(i, j) for i in layer_nodes.keys() for j in layer_nodes[i]])
+        layer_nodes = {layer: set(range(nodes)) for layer, nodes in enumerate(self.model.layers)}
+        m.input_nodes = layer_nodes.pop(0)
+        m.output_nodes = layer_nodes[ len(layer_nodes) ]
+        m.nodes = set([(i, j) for i in layer_nodes for j in layer_nodes[i]])
         
         # declare variables
         m.inputs = pyo.Var(m.input_nodes, bounds=self.bounds)
