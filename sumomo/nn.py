@@ -2,18 +2,14 @@ import torch
 from torch import nn
 
 
-class NN(nn.Module):
+class NN(nn.Sequential):
     def __init__(self, layers, activation='tanh'):
-        super().__init__()
         self.name = 'NN'
+        self.layers = layers
         self.activation = activation
-        self.layers = self._build_layers(layers)
-        self.network = nn.Sequential(*self.layers)
         self.weights = []
         self.biases = []
-
-    def forward(self, x):
-        return self.network(x)
+        super().__init__(*self._build_layers(layers))
     
     def fit(self, x, y, batch_size=10, epochs=1000, learning_rate=1e-2, loss_func=nn.MSELoss()):
         x_train, y_train = torch.Tensor(x), torch.Tensor(y)
@@ -38,7 +34,7 @@ class NN(nn.Module):
         return y
     
     def _get_params(self):
-        for layer in self.layers:
+        for layer in self:
             if isinstance(layer, nn.Linear):
                 self.weights.append(layer.weight.data.numpy())
                 self.biases.append(layer.bias.data.numpy())
