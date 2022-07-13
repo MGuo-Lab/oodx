@@ -10,9 +10,10 @@ class GPR(GaussianProcessRegressor):
         super().__init__(kernel=self.kernel(), alpha=noise)
         self.name = 'GPR'
         self.x_train = None
-        self.y_train = None
         self.length_scale = None
-        self.invK = None
+        self.constant_value = None
+        self.inv_K = None
+        self.noise = noise
     
     def kernel(self):
         kernel = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0, 1e2))
@@ -20,7 +21,6 @@ class GPR(GaussianProcessRegressor):
 
     def fit(self, x, y):
         self.x_train = x
-        self.y_train = y
         super().fit(x, y)
         self.save_params()
     
@@ -28,10 +28,9 @@ class GPR(GaussianProcessRegressor):
         params = self.kernel_.get_params()
         self.constant_value = params['k1__constant_value']
         self.length_scale = params['k2__length_scale']
-        K = self.kernel_(self.x_train, self.x_train)
-        self.invK = inv(K)
         self.alpha = self.alpha_.ravel()
-        self.beta = self.alpha * self.constant_value
+        K = self.kernel_(self.x_train, self.x_train) + np.eye(self.x_train.shape[0]) * self.noise
+        self.inv_K = inv(K)
     
     def predict(self, x, return_std=False):
         if return_std:
@@ -40,16 +39,17 @@ class GPR(GaussianProcessRegressor):
             return super().predict(x, return_std=False)
 
     def formulation(self, x, return_std=False):
-        # pred = self.model.kernel_(x, self.x_train) @ self.model.alpha_
-        # k_s = self.model.kernel_(self.x_train, x)
-        k_s = self.constant_value * np.exp(-sum(0.5 / self.length_scale ** 2 * (x[:, j] - self.x_train[:, j]) ** 2 for j in range(self.x_train.shape[1])))
-        pred = sum(k_s[i] * self.alpha[i] for i in range(self.x_train.shape[0]))
+        n = self.x_train.shape[0]
+        m = self.x_train.shape[1]
+        sq_exp = np.exp(
+            -sum(0.5 / self.length_scale ** 2 * (x[:, j] - self.x_train[:, j]) ** 2 for j in range(m))
+            )
+        k_s = self.constant_value * sq_exp
+        pred = sum(k_s[i] * self.alpha[i] for i in range(n))
         if return_std:
-            # k_ss = self.model.kernel_(x, x)
-            # note that k_ss is equal to self.const
-            k_ss = self.constant_value * np.exp(-sum(0.5 / self.length_scale ** 2 * (x[:, j] - x[:, j]) ** 2 for j in range(x.shape[1])))
-            # std = np.sqrt(k_ss - k_s.T.dot(self.invK).dot(k_s))
-            std = np.sqrt( k_ss - sum(k_s[i] * sum(self.invK[i, j] * k_s[j] for j in range(self.x_train.shape[0])) for i in range(self.x_train.shape[0])) )
+            k_K_k = sum(k_s[i] * sum(self.inv_K[i, j] * k_s[j] for j in range(n)) for i in range(n))
+            var = self.constant_value + self.noise - k_K_k
+            std = np.sqrt(var)
             return pred, std
         else:
             return pred
