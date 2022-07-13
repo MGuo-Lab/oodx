@@ -154,32 +154,3 @@ class GPC:
     @staticmethod
     def _sigmoid(a):
         return 1 / (1 + np.exp(-a))
-
-
-def main():
-    x = np.random.rand(20, 2)
-    y = np.random.rand(20, 1) * 10
-    x_new = np.array([[0.420, 0.069]])
-
-    gpr = GPR()
-    # with np.errstate(divide='ignore'):
-    #     gpr.fit(x, y)
-    gpr.fit(x, y)
-    pred, s2 = gpr.predict(x_new, return_std=True)
-    print(pred, s2)
-    val, u = gpr.formulation(x_new, return_std=True)
-    print(val, u)
-
-    from sklearn.datasets import make_moons
-    x, y = make_moons(noise=0.5, n_samples=100)
-
-    gpc = GPC()
-    gpc.fit(x, y)
-    pred = gpc.predict(x_new)
-    print(pred)
-    val = gpc.formulation(x_new[0])
-    print(val)
-
-
-if __name__ == '__main__':
-    main()
