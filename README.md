@@ -9,5 +9,5 @@ Sumomo is a Python package for surrogate modelling formulating optimisation prob
 ## Example
 ```python
 import pyomo.environ as pyo
-from sumomo import api
+from sumomo import API
 ```
