@@ -33,7 +33,8 @@ class BlockFormulation:
         # declare parameters
         x_train = self.model.x_train
         length_scale = self.model.length_scale
-        beta = self.model.beta
+        constant_value = self.model.constant_value
+        alpha = self.model.alpha
 
         # declare sets
         n_samples = set(range(x_train.shape[0]))
@@ -46,7 +47,7 @@ class BlockFormulation:
         # gpr constraint        
         m.gpr = pyo.Constraint(expr=
             m.output == 
-            sum(beta[i] * pyo.exp(-sum(0.5 / length_scale ** 2 * 
+            sum(alpha[i] * constant_value * pyo.exp(-sum(0.5 / length_scale ** 2 * 
             (m.inputs[j] - x_train[i, j]) ** 2 for j in n_inputs)) 
             for i in n_samples)
         )
