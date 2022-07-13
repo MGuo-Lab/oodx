@@ -7,7 +7,7 @@ from scipy.optimize import minimize
 
 class GPR(GaussianProcessRegressor):
     def __init__(self, noise=0.0):
-        super().__init__(kernel=self.kernel(), alpha=noise)
+        super().__init__(kernel=self._kernel(), alpha=noise)
         self.name = 'GPR'
         self.x_train = None
         self.length_scale = None
@@ -15,16 +15,16 @@ class GPR(GaussianProcessRegressor):
         self.inv_K = None
         self.noise = noise
     
-    def kernel(self):
+    def _kernel(self):
         kernel = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0, 1e2))
         return kernel
 
     def fit(self, x, y):
         self.x_train = x
         super().fit(x, y)
-        self.save_params()
+        self._save_params()
     
-    def save_params(self):
+    def _save_params(self):
         params = self.kernel_.get_params()
         self.constant_value = params['k1__constant_value']
         self.length_scale = params['k2__length_scale']
@@ -65,7 +65,7 @@ class GPC:
         self.delta = None
         self.invP = None
 
-    def kernel(self, x1, x2):
+    def _kernel(self, x1, x2):
         sq_dist = np.sum(x1 ** 2, 1).reshape(-1, 1) + np.sum(x2 ** 2, 1) - 2 * np.dot(x1, x2.T)
         sq_exp = self.sigma_f ** 2 * np.exp( - 0.5 / self.l ** 2 * sq_dist )
         return sq_exp
@@ -73,76 +73,86 @@ class GPC:
     def fit(self, x, t):
         self.x_train = x
         self.t_train = t
-        self.calculate_params()
+        self._calculate_params()
 
     def predict(self, x, return_std=False):
-        a = self.posterior_mode()
-        k_s = self.kernel(self.x_train, x)
-        mu = k_s.T.dot(self.t_train - self.sigmoid(a))
-        s2 = self.sigma_f ** 2 - k_s.T.dot(self.invP).dot(k_s)
-        s2 = np.diag(s2).clip(min=0).reshape(-1, 1)
-        beta = np.sqrt(1.0 + 3.1416 / 8 * s2)
-        prediction = self.sigmoid(mu / beta)
+        a = self._posterior_mode()
+        k_s = self._kernel(self.x_train, x)
+        mu = k_s.T.dot(self.t_train - self._sigmoid(a))
+        var = self.sigma_f ** 2 - k_s.T.dot(self.invP).dot(k_s)
+        var = np.diag(var).clip(min=0).reshape(-1, 1)
+        beta = np.sqrt(1 + 3.1416 / 8 * var)
+        prediction = self._sigmoid(mu / beta)
         if return_std:
-            return prediction, np.sqrt(s2)   # uncertainty is not 1.96*s due to not normal distribution here.
+            return prediction, np.sqrt(var)
         else:
             return prediction
     
     def formulation(self, x):
-        l = 0.5 / self.l ** 2
-        mu = self.sigma_f ** 2 * sum(self.delta[j] * np.exp(-sum(l * (x[i] - self.x_train[j, i]) ** 2 for i in range(self.x_train.shape[1]))) for j in range(self.x_train.shape[0]))
-        var = self.sigma_f ** 2 * (1 - sum(np.exp(-sum(l * (x[i] - self.x_train[j, i]) ** 2 for i in range(self.x_train.shape[1]))) * self.sigma_f ** 2 * sum(np.exp(-sum(l * (x[j] - self.x_train[k, j]) ** 2 for j in range(self.x_train.shape[1]))) * self.invP[j, k] for k in range(self.x_train.shape[0])) for j in range(self.x_train.shape[0])))
+        n = self.x_train.shape[0]
+        m = self.x_train.shape[1]
+        sq_exp = np.exp(
+            -sum(0.5 / self.l ** 2 * (x[j] - self.x_train[:, j]) ** 2 for j in range(m))
+            )
+        mu = self.sigma_f ** 2 * sum(self.delta[i] * sq_exp[i] for i in range(n))
+        var = self.sigma_f ** 2 * (1 - sum(
+            sq_exp[i] * self.sigma_f ** 2 * sum(
+                sq_exp[i_] * self.invP[i, i_] for i_ in range(n)) for i in range(n)))
         beta = np.sqrt(1 + 3.1416 / 8 * var)
-        pred = 1 / (1 + np.exp(- mu / beta))
-        return pred
+        prediction = 1 / (1 + np.exp(- mu / beta))
+        return prediction
     
-    def posterior_mode(self, max_iter=10, tol=1e-9):
-        K = self.kernel(self.x_train, self.x_train)
+    def _posterior_mode(self, max_iter=10, tol=1e-9):
+        K = self._kernel(self.x_train, self.x_train)
         a = np.zeros_like(self.t_train)
         I = np.eye(self.x_train.shape[0])
         for i in range(max_iter):
-            W = self.sigmoid(a) * (1 - self.sigmoid(a))
+            W = self._sigmoid(a) * (1 - self._sigmoid(a))
             W = np.diag(W.ravel())
             invQ = inv(I + W @ K)
-            a_new = (K @ invQ).dot(self.t_train - self.sigmoid(a) + W.dot(a))
+            a_new = (K @ invQ).dot(self.t_train - self._sigmoid(a) + W.dot(a))
             a_diff = np.abs(a_new - a)
             a = a_new
             if not np.any(a_diff > tol):
                 break
         return a
     
-    def calculate_params(self):
-        param_init = np.array([1.0, 1.0])  # l is a scalar parameter here
-        param_bounds = [(1e-6, None), (1e-6, None)]
-        params = minimize(self.opt_fun(), param_init, bounds=param_bounds, method='L-BFGS-B', options={'iprint': -1})
+    def _calculate_params(self):
+        
+        params = minimize(
+            fun=self._opt_fun, 
+            x0=[1.0, 1.0], 
+            bounds=[(1e-6, None), (1e-6, None)], 
+            method='L-BFGS-B', 
+            options={'iprint': -1})
+        
         self.l = params.x[0]
         self.sigma_f = params.x[1]
-        K = self.kernel(self.x_train, self.x_train)
-        a = self.posterior_mode()
-        W = self.sigmoid(a) * (1 - self.sigmoid(a))
+        a = self._posterior_mode()
+        W = self._sigmoid(a) * (1 - self._sigmoid(a))
         W = np.diag(W.ravel())
-        invW = inv(W)
-        P = invW + K
+        K = self._kernel(self.x_train, self.x_train)
+        P = inv(W) + K
         self.invP = inv(P)
-        delta = self.t_train - self.sigmoid(a)
-        self.delta = delta.ravel()
-
-    def opt_fun(self):
-        def f(theta):
-            I = np.eye(self.x_train.shape[0])
-            self.l = theta[0]
-            self.sigma_f = theta[1]
-            K = self.kernel(self.x_train, self.x_train) + 1e-5 * I
-            invK = inv(K)
-            a = self.posterior_mode()
-            W = self.sigmoid(a) * (1 - self.sigmoid(a))
-            W = np.diag(W.ravel())
-            ll = -0.5 * (a.T.dot(invK).dot(a) + slogdet(K)[1] + slogdet(W+invK)[1]) + np.inner(self.t_train.T, a.T) - np.sum(np.log(1.0 + np.exp(a)))
-            return -ll.ravel()
-        return f
+        self.delta = self.t_train - self._sigmoid(a)
+    
+    def _opt_fun(self, theta):
+        I = np.eye(self.x_train.shape[0])
+        self.l = theta[0]
+        self.sigma_f = theta[1]
+        K = self._kernel(self.x_train, self.x_train) + 1e-5 * I
+        inv_K = inv(K)
+        a = self._posterior_mode()
+        W = self._sigmoid(a) * (1 - self._sigmoid(a))
+        W = np.diag(W.ravel())
+        ll = self.t_train.T.dot(a) - np.sum(np.log(1.0 + np.exp(a))) - 0.5 * (
+            a.T.dot(inv_K).dot(a) + 
+            slogdet(K)[1] + 
+            slogdet(W+inv_K)[1])
+        return -ll
 
     @staticmethod
-    def sigmoid(a):
+    def _sigmoid(a):
         return 1 / (1 + np.exp(-a))
 
 
@@ -152,6 +162,8 @@ def main():
     x_new = np.array([[0.420, 0.069]])
 
     gpr = GPR()
+    # with np.errstate(divide='ignore'):
+    #     gpr.fit(x, y)
     gpr.fit(x, y)
     pred, s2 = gpr.predict(x_new, return_std=True)
     print(pred, s2)
