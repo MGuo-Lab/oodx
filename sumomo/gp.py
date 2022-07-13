@@ -66,18 +66,17 @@ class GPC:
         self.invP = None
 
     def kernel(self, x1, x2):
-        l = 0.5 / self.l ** 2
-        sq_dist = np.sum(l * x1 ** 2, 1).reshape(-1, 1) + np.sum(l * x2 ** 2, 1) - 2 * np.dot(x1, l.T * x2.T)
-        sq_exp = self.sigma_f ** 2 * np.exp(-sq_dist)
+        sq_dist = np.sum(x1 ** 2, 1).reshape(-1, 1) + np.sum(x2 ** 2, 1) - 2 * np.dot(x1, x2.T)
+        sq_exp = self.sigma_f ** 2 * np.exp( - 0.5 / self.l ** 2 * sq_dist )
         return sq_exp
 
     def fit(self, x, t):
         self.x_train = x
         self.t_train = t
-        self.calculate_params(x, t)
+        self.calculate_params()
 
     def predict(self, x, return_std=False):
-        a = self.posterior_mode(self.x_train, self.t_train)
+        a = self.posterior_mode()
         k_s = self.kernel(self.x_train, x)
         mu = k_s.T.dot(self.t_train - self.sigmoid(a))
         s2 = self.sigma_f ** 2 - k_s.T.dot(self.invP).dot(k_s)
@@ -97,48 +96,48 @@ class GPC:
         pred = 1 / (1 + np.exp(- mu / beta))
         return pred
     
-    def posterior_mode(self, x, t, max_iter=10, tol=1e-9):
+    def posterior_mode(self, max_iter=10, tol=1e-9):
         K = self.kernel(self.x_train, self.x_train)
-        a = np.zeros_like(t)
-        I = np.eye(x.shape[0])
+        a = np.zeros_like(self.t_train)
+        I = np.eye(self.x_train.shape[0])
         for i in range(max_iter):
             W = self.sigmoid(a) * (1 - self.sigmoid(a))
             W = np.diag(W.ravel())
             invQ = inv(I + W @ K)
-            a_new = (K @ invQ).dot(t - self.sigmoid(a) + W.dot(a))
+            a_new = (K @ invQ).dot(self.t_train - self.sigmoid(a) + W.dot(a))
             a_diff = np.abs(a_new - a)
             a = a_new
             if not np.any(a_diff > tol):
                 break
         return a
     
-    def calculate_params(self, x, t):
+    def calculate_params(self):
         param_init = np.array([1.0, 1.0])  # l is a scalar parameter here
         param_bounds = [(1e-6, None), (1e-6, None)]
-        params = minimize(self.opt_fun(x, t), param_init, bounds=param_bounds, method='L-BFGS-B', options={'iprint': -1})
+        params = minimize(self.opt_fun(), param_init, bounds=param_bounds, method='L-BFGS-B', options={'iprint': -1})
         self.l = params.x[0]
         self.sigma_f = params.x[1]
-        K = self.kernel(x, x)
-        a = self.posterior_mode(x, t)
+        K = self.kernel(self.x_train, self.x_train)
+        a = self.posterior_mode()
         W = self.sigmoid(a) * (1 - self.sigmoid(a))
         W = np.diag(W.ravel())
         invW = inv(W)
         P = invW + K
         self.invP = inv(P)
-        delta = t - self.sigmoid(a)
+        delta = self.t_train - self.sigmoid(a)
         self.delta = delta.ravel()
 
-    def opt_fun(self, x, t):
+    def opt_fun(self):
         def f(theta):
-            I = np.eye(x.shape[0])
+            I = np.eye(self.x_train.shape[0])
             self.l = theta[0]
             self.sigma_f = theta[1]
-            K = self.kernel(x, x) + 1e-5 * I
+            K = self.kernel(self.x_train, self.x_train) + 1e-5 * I
             invK = inv(K)
-            a = self.posterior_mode(x, t)
+            a = self.posterior_mode()
             W = self.sigmoid(a) * (1 - self.sigmoid(a))
             W = np.diag(W.ravel())
-            ll = -0.5 * (a.T.dot(invK).dot(a) + slogdet(K)[1] + slogdet(W+invK)[1]) + np.inner(t.T, a.T) - np.sum(np.log(1.0 + np.exp(a)))
+            ll = -0.5 * (a.T.dot(invK).dot(a) + slogdet(K)[1] + slogdet(W+invK)[1]) + np.inner(self.t_train.T, a.T) - np.sum(np.log(1.0 + np.exp(a)))
             return -ll.ravel()
         return f
 
