@@ -293,7 +293,7 @@ class BlockFormulation:
         # declare parameters
         x_train = self.model.x_train
         length_scale = self.model.l
-        constant_value = self.model.kappa
+        constant_value = self.model.sigma_f ** 2
         delta = self.model.delta
         invP = self.model.invP
 

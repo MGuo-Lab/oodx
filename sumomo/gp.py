@@ -61,14 +61,14 @@ class GPC:
         self.x_train = None
         self.t_train = None
         self.l = None
-        self.kappa = None
+        self.sigma_f = None
         self.delta = None
         self.invP = None
 
     def kernel(self, x1, x2):
         l = 0.5 / self.l ** 2
         sq_dist = np.sum(l * x1 ** 2, 1).reshape(-1, 1) + np.sum(l * x2 ** 2, 1) - 2 * np.dot(x1, l.T * x2.T)
-        sq_exp = self.kappa * np.exp(-sq_dist)
+        sq_exp = self.sigma_f ** 2 * np.exp(-sq_dist)
         return sq_exp
 
     def fit(self, x, t):
@@ -80,7 +80,7 @@ class GPC:
         a = self.posterior_mode(self.x_train, self.t_train)
         k_s = self.kernel(self.x_train, x)
         mu = k_s.T.dot(self.t_train - self.sigmoid(a))
-        s2 = self.kappa - k_s.T.dot(self.invP).dot(k_s)
+        s2 = self.sigma_f ** 2 - k_s.T.dot(self.invP).dot(k_s)
         s2 = np.diag(s2).clip(min=0).reshape(-1, 1)
         beta = np.sqrt(1.0 + 3.1416 / 8 * s2)
         prediction = self.sigmoid(mu / beta)
@@ -91,8 +91,8 @@ class GPC:
     
     def formulation(self, x):
         l = 0.5 / self.l ** 2
-        mu = self.kappa * sum(self.delta[j] * np.exp(-sum(l * (x[i] - self.x_train[j, i]) ** 2 for i in range(self.x_train.shape[1]))) for j in range(self.x_train.shape[0]))
-        var = self.kappa * (1 - sum(np.exp(-sum(l * (x[i] - self.x_train[j, i]) ** 2 for i in range(self.x_train.shape[1]))) * self.kappa * sum(np.exp(-sum(l * (x[j] - self.x_train[k, j]) ** 2 for j in range(self.x_train.shape[1]))) * self.invP[j, k] for k in range(self.x_train.shape[0])) for j in range(self.x_train.shape[0])))
+        mu = self.sigma_f ** 2 * sum(self.delta[j] * np.exp(-sum(l * (x[i] - self.x_train[j, i]) ** 2 for i in range(self.x_train.shape[1]))) for j in range(self.x_train.shape[0]))
+        var = self.sigma_f ** 2 * (1 - sum(np.exp(-sum(l * (x[i] - self.x_train[j, i]) ** 2 for i in range(self.x_train.shape[1]))) * self.sigma_f ** 2 * sum(np.exp(-sum(l * (x[j] - self.x_train[k, j]) ** 2 for j in range(self.x_train.shape[1]))) * self.invP[j, k] for k in range(self.x_train.shape[0])) for j in range(self.x_train.shape[0])))
         beta = np.sqrt(1 + 3.1416 / 8 * var)
         pred = 1 / (1 + np.exp(- mu / beta))
         return pred
@@ -117,7 +117,7 @@ class GPC:
         param_bounds = [(1e-6, None), (1e-6, None)]
         params = minimize(self.opt_fun(x, t), param_init, bounds=param_bounds, method='L-BFGS-B', options={'iprint': -1})
         self.l = params.x[0]
-        self.kappa = params.x[1]
+        self.sigma_f = params.x[1]
         K = self.kernel(x, x)
         a = self.posterior_mode(x, t)
         W = self.sigmoid(a) * (1 - self.sigmoid(a))
@@ -132,7 +132,7 @@ class GPC:
         def f(theta):
             I = np.eye(x.shape[0])
             self.l = theta[0]
-            self.kappa = theta[1]
+            self.sigma_f = theta[1]
             K = self.kernel(x, x) + 1e-5 * I
             invK = inv(K)
             a = self.posterior_mode(x, t)
