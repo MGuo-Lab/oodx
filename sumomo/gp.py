@@ -1,8 +1,8 @@
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF
 import numpy as np
 from numpy.linalg import inv, slogdet
 from scipy.optimize import minimize
+from sklearn.gaussian_process import GaussianProcessRegressor
+from sklearn.gaussian_process.kernels import RBF
 
 
 class GPR(GaussianProcessRegressor):
@@ -118,14 +118,12 @@ class GPC:
         return a
     
     def _calculate_params(self):
-        
         params = minimize(
             fun=self._opt_fun, 
             x0=[1.0, 1.0], 
             bounds=[(1e-6, None), (1e-6, None)], 
             method='L-BFGS-B', 
             options={'iprint': -1})
-        
         self.l = params.x[0]
         self.sigma_f = params.x[1]
         a = self._posterior_mode()
