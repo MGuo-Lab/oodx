@@ -9,11 +9,11 @@ class GPR(GaussianProcessRegressor):
     def __init__(self, noise=0.0):
         super().__init__(kernel=self._kernel(), alpha=noise)
         self.name = 'GPR'
+        self.noise = noise
         self.x_train = None
         self.length_scale = None
         self.constant_value = None
         self.inv_K = None
-        self.noise = noise
     
     def _kernel(self):
         kernel = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0, 1e2))
