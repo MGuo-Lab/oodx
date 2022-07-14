@@ -32,9 +32,11 @@ class GPR(GaussianProcessRegressor):
         K = self.kernel_(self.x_train, self.x_train) + np.eye(self.x_train.shape[0]) * self.noise
         self.inv_K = inv(K)
     
-    def predict(self, x, return_std=False):
+    def predict(self, x, return_std=False, return_cov=False):
         if return_std:
             return super().predict(x, return_std=True)
+        elif return_cov:
+            return super().predict(x, return_cov=True)
         else:
             return super().predict(x, return_std=False)
 
