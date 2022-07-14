@@ -21,6 +21,7 @@ def plot_sampling(api):
     ax = fig.add_subplot(111)
     ax.scatter(api.x[:, 0], api.x[:, 1], c='r', s=5)
 
+
 def plot_peaks():
     space = [(-3.0, 3.0), (-3.0, 3.0)]
 
@@ -43,7 +44,32 @@ def plot_peaks():
     plt.show()
 
 
-def plot_1d(api):
+def plot_1d(api, show_underlying=False, show_samples=False):
+    fig = plt.figure(figsize=(4, 3))
+    ax1 = fig.add_subplot(111)
+
+    if show_underlying:
+        x = np.linspace(*api.space[0], 100)
+        y = func_1d(x)
+        ax1.plot(x, y, ls='--')
+
+    if show_samples:
+        ax1.scatter(api.x, api.y)
+    
+    if api.regressor is not None:
+        x_ = np.linspace(*api.space_[0], 100).reshape(-1, 1)
+        # pred, std = api.regressor.predict(x_, return_std=True)
+        pred, std = api.regressor.formulation(x_, return_std=True)
+        pred =  pred * api.y_std + api.y_mean
+        std = std * api.y_std
+        u = 1.96 * std
+        ax1.plot(x, pred)
+        ax1.fill_between(x.ravel(), pred.ravel() + u.ravel(), pred.ravel() - u.ravel(), alpha=0.2)
+
+    plt.show()
+
+
+def plot_1d_old(api):
     fig = plt.figure(figsize=(8, 3))
     ax1 = fig.add_subplot(121)
     ax2 = fig.add_subplot(122)
