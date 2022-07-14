@@ -3,10 +3,11 @@ import matplotlib.pyplot as plt
 
 
 def peaks(x):
-    term1 = 3 * (1 - x[0]) ** 2 * np.exp(-(x[0] ** 2) - (x[1] + 1) ** 2)
-    term2 = - 10 * (x[0] / 5 - x[0] ** 3 - x[1] ** 5) * np.exp(-x[0] ** 2 - x[1] ** 2)
-    term3 = - 1 / 3 * np.exp(-(x[0] + 1) ** 2 - x[1] ** 2)
-    return sum([term1, term2, term3])
+    term1 = 3 * (1 - x[:, 0]) ** 2 * np.exp(-(x[:, 0] ** 2) - (x[:, 1] + 1) ** 2)
+    term2 = - 10 * (x[:, 0] / 5 - x[:, 0] ** 3 - x[:, 1] ** 5) * np.exp(-x[:, 0] ** 2 - x[:, 1] ** 2)
+    term3 = - 1 / 3 * np.exp(-(x[:, 0] + 1) ** 2 - x[:, 1] ** 2)
+    y = sum([term1, term2, term3])
+    return y.reshape(-1, 1)
 
 
 def func_1d(x):
@@ -35,9 +36,7 @@ def plot_peaks():
     x1_grid, x2_grid = np.meshgrid(x1, x2)
     inputs = np.c_[x1_grid.ravel(), x2_grid.ravel()]
 
-    y = np.zeros(inputs.shape[0])
-    for i in range(inputs.shape[0]):
-        y[i] = peaks(inputs[i])
+    y = peaks(inputs)
 
     ax1.contourf(x_plot[:, 0], x_plot[:, 1], y.reshape((50, 50)))
     ax1.title.set_text('underlying model')
