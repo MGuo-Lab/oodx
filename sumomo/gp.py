@@ -42,7 +42,9 @@ class GPR(GaussianProcessRegressor):
         n = self.x_train.shape[0]
         m = self.x_train.shape[1]
         sq_exp = np.exp(
-            -sum(0.5 / self.length_scale ** 2 * (x[:, j] - self.x_train[:, j]) ** 2 for j in range(m))
+            -sum(0.5 / self.length_scale ** 2 * (
+                x[:, j].reshape(1, -1) - self.x_train[:, j].reshape(-1, 1)
+                ) ** 2 for j in range(m))
             )
         k_s = self.constant_value * sq_exp
         pred = sum(k_s[i] * self.alpha[i] for i in range(n))
@@ -66,7 +68,10 @@ class GPC:
         self.invP = None
 
     def _kernel(self, x1, x2):
-        sq_dist = np.sum(x1 ** 2, 1).reshape(-1, 1) + np.sum(x2 ** 2, 1) - 2 * np.dot(x1, x2.T)
+        # sq_dist = np.sum(x1 ** 2, 1).reshape(-1, 1) + np.sum(x2 ** 2, 1) - 2 * np.dot(x1, x2.T)
+        sq_dist = sum(
+            (x1[:, j].reshape(1, -1) - x2[:, j].reshape(-1, 1)) ** 2 for j in range(x1.shape[1])
+            )
         sq_exp = self.sigma_f ** 2 * np.exp( - 0.5 / self.l ** 2 * sq_dist )
         return sq_exp
 
@@ -77,7 +82,7 @@ class GPC:
 
     def predict(self, x, return_std=False):
         a = self._posterior_mode()
-        k_s = self._kernel(self.x_train, x)
+        k_s = self._kernel(x, self.x_train)
         mu = k_s.T.dot(self.t_train - self._sigmoid(a))
         var = self.sigma_f ** 2 - k_s.T.dot(self.invP).dot(k_s)
         var = np.diag(var).clip(min=0).reshape(-1, 1)
@@ -92,7 +97,8 @@ class GPC:
         n = self.x_train.shape[0]
         m = self.x_train.shape[1]
         sq_exp = np.exp(
-            -sum(0.5 / self.l ** 2 * (x[j] - self.x_train[:, j]) ** 2 for j in range(m))
+            -sum(0.5 / self.l ** 2 * (
+                x[:, j].reshape(1, -1) - self.x_train[:, j].reshape(-1, 1)) ** 2 for j in range(m))
             )
         mu = self.sigma_f ** 2 * sum(self.delta[i] * sq_exp[i] for i in range(n))
         var = self.sigma_f ** 2 * (1 - sum(
