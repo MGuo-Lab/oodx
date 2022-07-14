@@ -15,4 +15,6 @@ from sumomo import API
 n_samples = 100
 space = [(-3.0, 3.0), (-3.0, 3.0)]
 api = API(n_samples, space)
+
+
 ```
