@@ -1,12 +1,13 @@
-# sumomo
-## Surrogate modelling and optimisation 
+<img
+  src="sumo.jpeg"
+  alt="A sumo"
+  width=150>
 
-This package enables surrogate modelling and optimisaton formulations for black box models.
+## Sumomo: Surrogate Modelling and Optimisation
+Sumomo is a Python package for surrogate modelling formulating optimisation problems using *Pyomo*. Surrogate models include Gaussian processes and neural networks for regression and classification. sumomo enables an entire surrogate modelling workflow and abstracted *Pyomo* formulations to be incorporated into larger optimisation problems.
 
-### Neural networks
-
-### Gaussian processes
-
-### Pyomo formulations
-
-### Application programming interface
+## Example
+```python
+import pyomo.environ as pyo
+from sumomo import API
+```

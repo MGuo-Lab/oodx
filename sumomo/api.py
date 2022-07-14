@@ -1,26 +1,27 @@
 import numpy as np
+from numpy.linalg import det
 from skopt.space import Space
 from skopt.sampler import Lhs, Sobol
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sumomo.gp import GPR, GPC
-from sumomo.nn import NN, NNClassifier
-from sumomo.formulations import BlockFormulation
-import itertools
 import pyomo.environ as pyo
 from scipy.spatial import Delaunay
+import itertools
 import math
-from numpy.linalg import det
+
+from .gp import GPR, GPC
+from .nn import NN, NNClassifier
+from .formulations import BlockFormulation
 
 
 class API:
-    def __init__(self):
+    def __init__(self, n_samples, space, n_outputs=1, method='lhs'):
         # input sample space
-        self.space = None
+        self.space = space
         # input, output, and training variables
-        self.x = None
-        self.y = None
-        self.t = None
+        self.x = self._get_inputs(n_samples, method)
+        self.y = np.zeros((n_samples, n_outputs))
+        self.t = np.ones((n_samples, 1))
         # training and testing variables
         self.x_train = None
         self.x_test = None
@@ -50,41 +51,35 @@ class API:
         # adaptive samples
         self.delaunay = None
 
-    def initialise(self, n_samples, input_space, n_outputs=1, method='lhs'):
+    def _get_inputs(self, n_samples, method='lhs'):
         '''
         n_samples         -       number of inputs samples
-        input_space       -       input space
-        n_outputs         -       number of output dimensions
         method            -       sampling method: random, lhs, sobol, grid
         '''
         
-        self.space = input_space
-        self.y = np.zeros((n_samples, n_outputs))
-        self.t = np.ones((n_samples, 1))
-        
         if method == 'random':
-            mat = np.random.rand(n_samples, len(input_space))
+            mat = np.random.rand(n_samples, len(self.space))
             samples = np.zeros_like(mat)
             for i in range(n_samples):
-                for j in range(len(input_space)):
-                    samples[i][j] = mat[i][j] * (input_space[j][1] - input_space[j][0]) + input_space[j][0]
+                for j in range(len(self.space)):
+                    samples[i][j] = mat[i][j] * (self.space[j][1] - self.space[j][0]) + self.space[j][0]
             self.x = samples
 
         elif method == 'lhs':
             lhs = Lhs(criterion='maximin', iterations=1000)
-            input_space = Space(input_space)
+            input_space = Space(self.space)
             lhs_samples = lhs.generate(input_space.dimensions, n_samples)
             self.x = np.array(lhs_samples)
 
         elif method == 'sobol':
             sobol = Sobol()
-            input_space = Space(input_space)
+            input_space = Space(self.space)
             sobol_samples = sobol.generate(input_space.dimensions, n_samples)
             self.x = np.array(sobol_samples)
 
         elif method == 'grid':
             n = int(np.sqrt(n_samples))
-            x1, x2 = np.linspace(*input_space[0], n), np.linspace(*input_space[1], n)
+            x1, x2 = np.linspace(*self.space[0], n), np.linspace(*self.space[1], n)
             x1_grid, x2_grid = np.meshgrid(x1, x2)
             grid = np.c_[x1_grid.ravel(), x2_grid.ravel()]
             self.x = np.array(grid)
@@ -183,7 +178,7 @@ class API:
             return np.sqrt(self.test('mse'))
     
     def formulate(self, model):
-        return pyo.Block(rule=BlockFormulation(model, self.space_).get_model())
+        return pyo.Block(rule=BlockFormulation(model, self.space_).get_rule())
     
     def check_convergence(self):
         # TODO

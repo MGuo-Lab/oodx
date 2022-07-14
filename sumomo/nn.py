@@ -2,43 +2,16 @@ import torch
 from torch import nn
 
 
-class NN(nn.Module):
+class NN(nn.Sequential):
     def __init__(self, layers, activation='tanh'):
-        super().__init__()
         self.name = 'NN'
+        self.layers = layers
         self.activation = activation
-        self.layer_nodes = {layer: set(range(nodes)) for layer, nodes in enumerate(layers)}
-        self.input_nodes = self.layer_nodes.pop(0)
-        self.output_nodes = self.layer_nodes[len(self.layer_nodes)]
-        self.activated_nodes = self.layer_nodes.copy()
-        self.activated_nodes.pop( len(self.layer_nodes) )
-        self.layers = self.build_layers(layers)
-        self.network = nn.Sequential(*self.layers)
-        self.loss_func = nn.MSELoss()
-        self.x_train = None
-        self.y_train = None
         self.weights = []
         self.biases = []
+        super().__init__(*self._build_layers(layers))
     
-    def build_layers(self, layers):
-        layers_ = []
-        for i in range(len(layers) - 2):
-            layers_.append( nn.Linear(layers[i], layers[i + 1]) )
-            if self.activation == 'tanh':
-                layers_.append( nn.Tanh() )
-            elif self.activation == 'sigmoid':
-                layers_.append( nn.Sigmoid() )
-            elif self.activation == 'softplus':
-                layers_.append( nn.Softplus() )
-            elif self.activation == 'relu':
-                layers_.append( nn.ReLU() )
-        layers_.append( nn.Linear(layers[-2], layers[-1]) )
-        return layers_
-
-    def forward(self, x):
-        return self.network(x)
-    
-    def fit(self, x, y, batch_size=10, epochs=1000, learning_rate=1e-2):
+    def fit(self, x, y, batch_size=10, epochs=1000, learning_rate=1e-2, loss_func=nn.MSELoss()):
         x_train, y_train = torch.Tensor(x), torch.Tensor(y)
         optimiser = torch.optim.Adam(self.parameters(), lr=learning_rate)
         self.train()
@@ -48,26 +21,43 @@ class NN(nn.Module):
                 idx = permutation[i:i+batch_size]
                 x_batch, y_batch = x_train[idx], y_train[idx]    
                 predictions = self.forward(x_batch)
-                loss = self.loss_func(predictions, y_batch)
+                loss = loss_func(predictions, y_batch)
                 optimiser.zero_grad()
                 loss.backward()
                 optimiser.step()
-        
-        self.x_train = x
-        self.y_train = y
-        self.get_params()
-    
-    def get_params(self):
-        for layer in self.layers:
-            if isinstance(layer, nn.Linear):
-                self.weights.append(layer.weight.data.numpy())
-                self.biases.append(layer.bias.data.numpy())
+        self._get_params()
     
     def predict(self, x):
         x = torch.Tensor(x)
         self.eval()
         y = self.forward(x).detach().numpy()
         return y
+    
+    def _get_params(self):
+        for layer in self:
+            if isinstance(layer, nn.Linear):
+                self.weights.append(layer.weight.data.numpy())
+                self.biases.append(layer.bias.data.numpy())
+    
+    def _activation_selector(self):
+        if self.activation == 'tanh':
+            return nn.Tanh()
+        elif self.activation == 'sigmoid':
+            return nn.Sigmoid()
+        elif self.activation == 'softplus':
+            return nn.Softplus()
+        elif self.activation == 'relu':
+            return nn.ReLU()
+        elif self.activation == 'hardsigmoid':
+            return nn.Hardsigmoid()
+
+    def _build_layers(self, layers):
+        torch_layers = []
+        for i in range(len(layers) - 2):
+            torch_layers.append( nn.Linear(layers[i], layers[i + 1]) )
+            torch_layers.append( self._activation_selector() )
+        torch_layers.append( nn.Linear(layers[-2], layers[-1]) )
+        return torch_layers
 
 
 class NNClassifier(NN):
@@ -75,35 +65,9 @@ class NNClassifier(NN):
         super().__init__(layers, activation=activation)
         self.name = 'NNClassifier'
     
-    def build_layers(self, layers):
-        layers_ = []
+    def _build_layers(self, layers):
+        torch_layers = []
         for i in range(len(layers) - 1):
-            layers_.append( nn.Linear(layers[i], layers[i + 1]) )
-            if self.activation == 'sigmoid':
-                layers_.append( nn.Sigmoid() )
-            elif self.activation == 'hardsigmoid':
-                layers_.append(  nn.Hardsigmoid() )
-        return layers_
-
-
-def main():
-    net = NN([2, 10, 15, 1], activation='tanh')
-
-    x = np.random.rand(3, 2)
-    y = np.random.rand(3, 1) * 10
-    print(y)
-    net.fit(x, y)
-    pred = net.predict(x)
-    print(pred)
-
-    classifier = NNClassifier([2, 10, 1])
-    t = np.array([[0], [1], [0]])
-    classifier.fit(x, t)
-    pred = classifier.predict(x)
-    print(pred)
-
-
-if __name__ == '__main__':
-    import numpy as np
-
-    main()
+            torch_layers.append( nn.Linear(layers[i], layers[i + 1]) )
+            torch_layers.append( self._activation_selector() )
+        return torch_layers
