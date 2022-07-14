@@ -1,22 +1,23 @@
 import numpy as np
+from numpy.linalg import det
 from skopt.space import Space
 from skopt.sampler import Lhs, Sobol
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sumomo.gp import GPR, GPC
-from sumomo.nn import NN, NNClassifier
-from sumomo.formulations import BlockFormulation
-import itertools
 import pyomo.environ as pyo
 from scipy.spatial import Delaunay
+import itertools
 import math
-from numpy.linalg import det
+
+from .gp import GPR, GPC
+from .nn import NN, NNClassifier
+from .formulations import BlockFormulation
 
 
 class API:
-    def __init__(self, n_samples, input_space, n_outputs=1, method='lhs'):
+    def __init__(self, n_samples, space, n_outputs=1, method='lhs'):
         # input sample space
-        self.space = input_space
+        self.space = space
         # input, output, and training variables
         self.x = self._get_inputs(n_samples, method)
         self.y = np.zeros((n_samples, n_outputs))
@@ -177,7 +178,7 @@ class API:
             return np.sqrt(self.test('mse'))
     
     def formulate(self, model):
-        return pyo.Block(rule=BlockFormulation(model, self.space_).get_model())
+        return pyo.Block(rule=BlockFormulation(model, self.space_).get_rule())
     
     def check_convergence(self):
         # TODO

@@ -6,7 +6,7 @@ class BlockFormulation:
         self.model = model
         self.bounds = bounds
     
-    def get_model(self):
+    def get_rule(self):
         if self.model.name == 'NN':
             if self.model.activation == 'relu':
                 return self._nn_relu_rule
