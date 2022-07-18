@@ -52,7 +52,7 @@ class GPR(GaussianProcessRegressor):
         pred = sum(k_s[i] * self.alpha[i] for i in range(n))
         if return_std:
             vMv = sum(k_s[i] * sum(self.inv_K[i, j] * k_s[j] for j in range(n)) for i in range(n))
-            var = self.constant_value + self.noise - vMv
+            var = self.constant_value - vMv #+ self.noise
             std = np.sqrt(var)
             return pred, std
         else:
