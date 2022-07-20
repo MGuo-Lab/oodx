@@ -130,7 +130,7 @@ def plot_model(api, show_samples=False, show_new=False, show_triangles=False, sh
         class_grid = class_grid.reshape((50, 50))
         ax.contour(x_plot[:, 0], x_plot[:, 1], class_grid, levels=[0.5], linestyles='dashed', colors='k', linewidths=1)
     
-    plt.show()
+    plt.tight_layout()
 
 
 def plot_gp(api, show_samples=False, show_new=False, show_triangles=False, show_sol=False, show_class=False):
@@ -202,7 +202,7 @@ def plot_activation(activation):
         ax.plot(x, f(x))
         ax.title.set_text('hardsigmoid')
     
-    plt.show()
+    plt.tight_layout()
 
 
 def plot_triangles(api, new):
