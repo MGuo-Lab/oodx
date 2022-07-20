@@ -67,7 +67,7 @@ class GPC:
         self.l = None
         self.sigma_f = None
         self.delta = None
-        self.invP = None
+        self.inv_P = None
 
     def _kernel(self, x1, x2):
         # sq_dist = np.sum(x1 ** 2, 1).reshape(-1, 1) + np.sum(x2 ** 2, 1) - 2 * np.dot(x1, x2.T)
@@ -86,7 +86,7 @@ class GPC:
         a = self._posterior_mode()
         k_s = self._kernel(x, self.x_train)
         mu = k_s.T.dot(self.t_train - self._sigmoid(a))
-        var = self.sigma_f ** 2 - k_s.T.dot(self.invP).dot(k_s)
+        var = self.sigma_f ** 2 - k_s.T.dot(self.inv_P).dot(k_s)
         var = np.diag(var).clip(min=0).reshape(-1, 1)
         beta = np.sqrt(1 + 3.1416 / 8 * var)
         prediction = self._sigmoid(mu / beta)
@@ -105,7 +105,7 @@ class GPC:
         mu = self.sigma_f ** 2 * sum(self.delta[i] * sq_exp[i] for i in range(n))
         var = self.sigma_f ** 2 * (1 - sum(
             sq_exp[i] * self.sigma_f ** 2 * sum(
-                sq_exp[i_] * self.invP[i, i_] for i_ in range(n)) for i in range(n)))
+                sq_exp[i_] * self.inv_P[i, i_] for i_ in range(n)) for i in range(n)))
         beta = np.sqrt(1 + 3.1416 / 8 * var)
         prediction = 1 / (1 + np.exp(- mu / beta))
         return prediction
@@ -117,8 +117,8 @@ class GPC:
         for i in range(max_iter):
             W = self._sigmoid(a) * (1 - self._sigmoid(a))
             W = np.diag(W.ravel())
-            invQ = inv(I + W @ K)
-            a_new = (K @ invQ).dot(self.t_train - self._sigmoid(a) + W.dot(a))
+            inv_Q = inv(I + W @ K)
+            a_new = (K @ inv_Q).dot(self.t_train - self._sigmoid(a) + W.dot(a))
             a_diff = np.abs(a_new - a)
             a = a_new
             if not np.any(a_diff > tol):
@@ -139,7 +139,7 @@ class GPC:
         W = np.diag(W.ravel())
         K = self._kernel(self.x_train, self.x_train)
         P = inv(W) + K
-        self.invP = inv(P)
+        self.inv_P = inv(P)
         self.delta = self.t_train - self._sigmoid(a)
     
     def _opt_fun(self, theta):
