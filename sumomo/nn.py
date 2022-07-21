@@ -71,3 +71,19 @@ class NNClassifier(NN):
             torch_layers.append( nn.Linear(layers[i], layers[i + 1]) )
             torch_layers.append( self._activation_selector() )
         return torch_layers
+    
+    def fit(self, x, y, batch_size=10, epochs=1000, learning_rate=1e-2, loss_func=nn.BCEWithLogitsLoss()):
+        x_train, y_train = torch.Tensor(x), torch.Tensor(y)
+        optimiser = torch.optim.Adam(self.parameters(), lr=learning_rate)
+        self.train()
+        for epoch in range(epochs):
+            permutation = torch.randperm(len(x_train))
+            for i in range(0, len(x_train), batch_size):
+                idx = permutation[i:i+batch_size]
+                x_batch, y_batch = x_train[idx], y_train[idx]    
+                predictions = self.forward(x_batch)
+                loss = loss_func(predictions, y_batch)
+                optimiser.zero_grad()
+                loss.backward()
+                optimiser.step()
+        self._get_params()
