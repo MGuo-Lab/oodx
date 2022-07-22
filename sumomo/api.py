@@ -10,7 +10,7 @@ import itertools
 import math
 
 from .gp import GPR, GPC
-from .nn import NN, NNClassifier
+from .nn import NN
 from .formulations import BlockFormulation
 
 
@@ -158,7 +158,7 @@ class API:
                 layers = [len(self.x.T), *hidden_layers, len(self.y.T)]
             if 'activation' in kwargs:
                 activation = kwargs['activation']
-            self.classifier = NNClassifier(layers=layers, activation=activation)
+            self.classifier = NN(layers=layers, activation=activation)
         # print(self.classifier)
         
     def test(self, method='mse'):
