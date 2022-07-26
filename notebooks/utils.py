@@ -126,9 +126,13 @@ def plot_model(api, show_samples=False, show_new=False, show_triangles=False, sh
         ax.plot(show_sol[0], show_sol[1], 'w*')
     
     if show_class:
-        class_grid = api.classifier.predict(model_input_grid)
-        class_grid = class_grid.reshape((50, 50))
-        ax.contour(x_plot[:, 0], x_plot[:, 1], class_grid, levels=[0.5], linestyles='dashed', colors='k', linewidths=1)
+        if api.classifier.name == 'NN':
+            logits_grid, proba_grid = api.classifier.predict(model_input_grid, return_proba=True)
+            logits_grid = logits_grid.reshape((50, 50))
+            proba_grid = proba_grid.reshape((50, 50))
+        else:
+            proba_grid = api.classifier.predict(model_input_grid)
+        ax.contour(x_plot[:, 0], x_plot[:, 1], proba_grid, levels=[0.5], linestyles='dashed', colors='k', linewidths=1)
     
     plt.tight_layout()
 
