@@ -62,21 +62,4 @@ class NN(nn.Sequential):
             torch_layers.append( self._activation_selector() )
         torch_layers.append( nn.Linear(layers[-2], layers[-1]) )
         return torch_layers
-
-
-'''
-NNClassifier is now redundant.
-Use NN to predict logits using BCEWithLogitsLoss function.
-'''
-class NNClassifier(NN):
-    def __init__(self, layers, activation='sigmoid'):
-        super().__init__(layers, activation=activation)
-        self.name = 'NNClassifier'
-    
-    def _build_layers(self, layers):
-        torch_layers = []
-        for i in range(len(layers) - 1):
-            torch_layers.append( nn.Linear(layers[i], layers[i + 1]) )
-            torch_layers.append( self._activation_selector() )
-        return torch_layers
     

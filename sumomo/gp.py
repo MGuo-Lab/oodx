@@ -70,7 +70,6 @@ class GPC:
         self.inv_P = None
 
     def _kernel(self, x1, x2):
-        # sq_dist = np.sum(x1 ** 2, 1).reshape(-1, 1) + np.sum(x2 ** 2, 1) - 2 * np.dot(x1, x2.T)
         sq_dist = sum(
             (x1[:, j].reshape(1, -1) - x2[:, j].reshape(-1, 1)) ** 2 for j in range(x1.shape[1])
             )
