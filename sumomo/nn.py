@@ -27,12 +27,15 @@ class NN(nn.Sequential):
                 optimiser.step()
         self._get_params()
     
-    def predict(self, x):
-        # TODO - for classification return logits and probabilities
+    def predict(self, x, return_proba=False):
         x = torch.Tensor(x)
         self.eval()
-        y = self.forward(x).detach().numpy()
-        return y
+        y = self.forward(x).detach()
+        if return_proba:
+            proba = torch.sigmoid(y).detach()
+            return y.numpy(), proba.numpy()
+        else:
+            return y.numpy()
     
     def _get_params(self):
         for layer in self:
@@ -76,3 +79,4 @@ class NNClassifier(NN):
             torch_layers.append( nn.Linear(layers[i], layers[i + 1]) )
             torch_layers.append( self._activation_selector() )
         return torch_layers
+    
