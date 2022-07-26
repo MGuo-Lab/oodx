@@ -47,8 +47,9 @@ def plot_1d(api, show_underlying=False, show_samples=False):
     fig = plt.figure(figsize=(4, 3))
     ax1 = fig.add_subplot(111)
 
+    x = np.linspace(*api.space[0], 100)
+
     if show_underlying:
-        x = np.linspace(*api.space[0], 100)
         y = func_1d(x)
         ax1.plot(x, y, ls='--')
 
