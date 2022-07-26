@@ -178,7 +178,7 @@ class API:
             return np.sqrt(self.test('mse'))
     
     def formulate(self, model):
-        return pyo.Block(rule=BlockFormulation(model, self.space_).get_rule())
+        return pyo.Block(rule=BlockFormulation(model, self.space_).rule())
     
     def check_convergence(self):
         # TODO
