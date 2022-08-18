@@ -88,7 +88,7 @@ class GPC:
         self.t_train = t
         self._calculate_params()
 
-    def predict(self, x, return_std=False):
+    def predict(self, x, return_std=False, return_class=False):
         a = self._posterior_mode()
         k_s = self._kernel(x, self.x_train)
         mu = k_s.T.dot(self.t_train - self._sigmoid(a))
@@ -96,7 +96,12 @@ class GPC:
         var = np.diag(var).clip(min=0).reshape(-1, 1)
         beta = np.sqrt(1 + 3.1416 / 8 * var)
         prediction = self._sigmoid(mu / beta)
-        if return_std:
+        if return_class:
+            c = prediction.copy()
+            c[c >= 0.5] = 1
+            c[c < 0.5] = 0
+            return prediction, c
+        elif return_std:
             return prediction, np.sqrt(var)
         else:
             return prediction

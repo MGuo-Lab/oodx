@@ -27,12 +27,18 @@ class NN(nn.Sequential):
                 optimiser.step()
         self._get_params()
     
-    def predict(self, x, return_proba=False):
+    def predict(self, x, return_proba=False, return_class=False):
         x = torch.Tensor(x)
         self.eval()
         y = self.forward(x).detach()
-        if return_proba:
-            proba = torch.sigmoid(y).detach()
+        c = torch.max(y, torch.tensor([0.]))
+        c[c > 0] = 1
+        proba = torch.sigmoid(y).detach()
+        if return_class and return_proba:
+            return y.numpy(), proba.numpy(), c.numpy()
+        elif return_class:
+            return y.numpy(), c.numpy()
+        elif return_proba:
             return y.numpy(), proba.numpy()
         else:
             return y.numpy()
