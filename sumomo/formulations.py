@@ -38,16 +38,19 @@ class BlockFormulation:
         # declare sets
         n_samples = set(range(x_train.shape[0]))
         n_inputs = set(range(x_train.shape[1]))
+        n_outputs = set(range(1))
         
         # declare variables
         m.inputs = pyo.Var(n_inputs, bounds=self.bounds)
-        m.output = pyo.Var()
+        m.outputs = pyo.Var(n_outputs)
 
         # gpr constraint        
         m.gpr = pyo.Constraint(expr=
-            m.output == 
-            sum(alpha[i] * constant_value * pyo.exp(-sum(0.5 / length_scale ** 2 * 
-            (m.inputs[j] - x_train[i, j]) ** 2 for j in n_inputs)) 
+            m.outputs[0] == 
+            sum(alpha[i] * constant_value * pyo.exp(-sum(
+                0.5 / length_scale ** 2 * 
+                (m.inputs[j] - x_train[i, j]) ** 2 for j in n_inputs
+            )) 
             for i in n_samples)
         )
     
@@ -58,21 +61,32 @@ class BlockFormulation:
         length_scale = self.model.l
         constant_value = self.model.sigma_f ** 2
         delta = self.model.delta
-        invP = self.model.invP
+        invP = self.model.inv_P
 
         # declare sets
         n_samples = set(range(x_train.shape[0]))
         n_inputs = set(range(x_train.shape[1]))
+        n_outputs = set(range(1))
 
         # declare variables
         m.inputs = pyo.Var(n_inputs, bounds=self.bounds)
-        m.output = pyo.Var()
+        m.outputs = pyo.Var(n_outputs)
 
         # gpc constraint
         m.gpc = pyo.Constraint(expr=
-            m.output == 
-            1 / (1 + pyo.exp(-constant_value * sum(delta[j] * pyo.exp(-sum(0.5 / length_scale ** 2 * (m.inputs[i] - x_train[j, i]) ** 2 for i in n_inputs)) for j in n_samples) / pyo.sqrt(1 + 3.1416 / 8 * constant_value * (1 - sum(pyo.exp(-sum(0.5 / length_scale ** 2 * (m.inputs[i] - x_train[j, i]) ** 2 for i in n_inputs)) * constant_value * sum(pyo.exp(-sum(0.5 / length_scale ** 2 * (m.inputs[j] - x_train[k, j]) ** 2 for j in n_inputs)) * invP[j, k] for k in n_samples) for j in n_samples)))))
-        )
+        m.outputs[0] == 
+        1 / (1 + pyo.exp(-constant_value * sum(
+            delta[j] * pyo.exp(-sum(
+                0.5 / length_scale ** 2 * (m.inputs[i] - x_train[j, i]) ** 2 
+                for i in n_inputs)) for j in n_samples) / pyo.sqrt(
+                    1 + 3.1416 / 8 * constant_value * (1 - sum(
+                    pyo.exp(-sum(0.5 / length_scale ** 2 * (
+                        m.inputs[i] - x_train[j, i]) ** 2 
+                        for i in n_inputs)) * constant_value * sum(
+                            pyo.exp(-sum(0.5 / length_scale ** 2 * (
+                                m.inputs[j] - x_train[k, j]) ** 2 
+                                for j in n_inputs)) * invP[j, k] 
+                                for k in n_samples) for j in n_samples))))))
     
 
     def _nn_general(self, m):

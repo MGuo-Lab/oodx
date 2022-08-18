@@ -41,17 +41,24 @@ class GPR(GaussianProcessRegressor):
             return super().predict(x, return_std=False)
 
     def formulation(self, x, return_std=False):
-        n = self.x_train.shape[0]
-        m = self.x_train.shape[1]
-        sq_exp = np.exp(
+        n = self.x_train.shape[0]   # number of training samples
+        m = self.x_train.shape[1]   # number of input dimensions
+        # squared exponential kernel evaluated at training and new inputs
+        k = self.constant_value * np.exp(
             -sum(0.5 / self.length_scale ** 2 * (
                 x[:, j].reshape(1, -1) - self.x_train[:, j].reshape(-1, 1)
                 ) ** 2 for j in range(m))
             )
-        k_s = self.constant_value * sq_exp
-        pred = sum(k_s[i] * self.alpha[i] for i in range(n))
+        # linear predictor of mean function
+        pred = sum(k[i] * self.alpha[i] for i in range(n))
         if return_std:
-            vMv = sum(k_s[i] * sum(self.inv_K[i, j] * k_s[j] for j in range(n)) for i in range(n))
+            # vector-matrix-vector product of k^T K^-1 k
+            vMv = sum(
+                k[i] * sum(
+                    self.inv_K[i, j] * k[j] for j in range(n)
+                    ) for i in range(n)
+                )
+            # variance and std at new input
             var = self.constant_value - vMv #+ self.noise
             std = np.sqrt(var)
             return pred, std
