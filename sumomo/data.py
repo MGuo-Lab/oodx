@@ -119,6 +119,7 @@ class DataHandler:
             # normalise y_test using training moments
             self.y_test_ = (self.y_test - self.y_train_mean) / self.y_train_std
     
+
     def inv_scale_x(self, x):
         output = np.zeros_like(x)
         for i in range(x.shape[0]):
@@ -129,6 +130,7 @@ class DataHandler:
                     output[i, j] = x[i, j] * self.x_std[j] + self.x_mean[j]
         return output
     
+
     def scale_x(self, x):
         output = np.zeros_like(x)
         for i in range(x.shape[0]):
@@ -139,6 +141,7 @@ class DataHandler:
                     output[i, j] = (x[i, j] - self.x_mean[j]) / self.x_std[j]
         return output
     
+
     def inv_scale_y(self, y):
         output = np.zeros_like(y)
         for i in range(y.shape[0]):
@@ -148,6 +151,7 @@ class DataHandler:
                 else:
                     output[i, j] = y[i, j] * self.y_std[j] + self.y_mean[j]
         return output
+    
     
     def scale_y(self, y):
         output = np.zeros_like(y)
