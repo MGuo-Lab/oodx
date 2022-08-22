@@ -3,12 +3,12 @@ import pyomo.environ as pyo
 
 class BlockFormulation:
 
-    def __init__(self, model, bounds):
+    def __init__(self, model):
         self.model = model
-        self.bounds = bounds
     
 
-    def rule(self):
+    def rule(self, return_std=False):
+        
         if self.model.name == 'NN':
             if self.model.activation == 'relu':
                 return self._nn_relu_rule
@@ -22,7 +22,10 @@ class BlockFormulation:
                 return self._nn_hardsigmoid_rule
         
         if self.model.name == 'GPR':
-            return self._gpr_rule
+            if return_std:
+                return self._gpr_std_rule
+            else:
+                return self._gpr_rule
         
         if self.model.name == 'GPC':
             return self._gpc_rule
@@ -41,7 +44,7 @@ class BlockFormulation:
         n_outputs = set(range(1))
         
         # declare variables
-        m.inputs = pyo.Var(n_inputs, bounds=self.bounds)
+        m.inputs = pyo.Var(n_inputs)
         m.outputs = pyo.Var(n_outputs)
 
         # gpr constraint        
@@ -50,10 +53,31 @@ class BlockFormulation:
             sum(alpha[i] * constant_value * pyo.exp(-sum(
                 0.5 / length_scale ** 2 * 
                 (m.inputs[j] - x_train[i, j]) ** 2 for j in n_inputs
-            )) 
-            for i in n_samples)
+            )) for i in n_samples)
         )
     
+
+    def _gpr_std_rule(self, m):
+        # declare parameters
+        x_train = self.model.x_train
+        length_scale = self.model.length_scale
+        constant_value = self.model.constant_value
+        inv_K = self.model.inv_K
+
+        # declare sets
+        n_samples = set(range(x_train.shape[0]))
+        n_inputs = set(range(x_train.shape[1]))
+        n_outputs = set(range(1))
+        
+        # declare variables
+        m.inputs = pyo.Var(n_inputs)
+        m.outputs = pyo.Var(n_outputs)
+
+        # gpr std constraint        
+        m.gpr_std = pyo.Constraint(expr=
+            m.outputs[0] == sum(constant_value * pyo.exp(-sum(0.5 / length_scale ** 2 * (m.inputs[j] - x_train[i, j]) ** 2 for j in n_inputs)) * sum(inv_K[i, k] * constant_value * pyo.exp(-sum(0.5 / length_scale ** 2 * (m.inputs[j] - x_train[k, j]) ** 2 for j in n_inputs)) for k in n_samples) for i in n_samples)
+        )
+
 
     def _gpc_rule(self, m):
         # declare parameters
@@ -69,7 +93,7 @@ class BlockFormulation:
         n_outputs = set(range(1))
 
         # declare variables
-        m.inputs = pyo.Var(n_inputs, bounds=self.bounds)
+        m.inputs = pyo.Var(n_inputs)
         m.outputs = pyo.Var(n_outputs)
 
         # gpc constraint
@@ -103,7 +127,7 @@ class BlockFormulation:
         m.activated_nodes = set([(i, j) for i in hidden_nodes for j in hidden_nodes[i]])
     
         # declare variables
-        m.inputs = pyo.Var(m.input_nodes, bounds=self.bounds)
+        m.inputs = pyo.Var(m.input_nodes)
         m.z = pyo.Var(nodes)
         m.a = pyo.Var(m.activated_nodes)
         m.outputs = pyo.Var(m.output_nodes)
@@ -132,7 +156,7 @@ class BlockFormulation:
         m.nn = pyo.Block(rule=self._nn_general)
     
         # declare variables
-        m.inputs = pyo.Var(m.nn.input_nodes, bounds=self.bounds)
+        m.inputs = pyo.Var(m.nn.input_nodes)
         m.outputs = pyo.Var(m.nn.output_nodes)
 
         # constraints
@@ -156,7 +180,7 @@ class BlockFormulation:
         m.nn = pyo.Block(rule=self._nn_general)
     
         # declare variables
-        m.inputs = pyo.Var(m.nn.input_nodes, bounds=self.bounds)
+        m.inputs = pyo.Var(m.nn.input_nodes)
         m.outputs = pyo.Var(m.nn.output_nodes)
 
         # constraints
@@ -180,7 +204,7 @@ class BlockFormulation:
         m.nn = pyo.Block(rule=self._nn_general)
     
         # declare variables
-        m.inputs = pyo.Var(m.nn.input_nodes, bounds=self.bounds)
+        m.inputs = pyo.Var(m.nn.input_nodes)
         m.outputs = pyo.Var(m.nn.output_nodes)
 
         # constraints
@@ -204,7 +228,7 @@ class BlockFormulation:
         m.nn = pyo.Block(rule=self._nn_general)
     
         # declare variables
-        m.inputs = pyo.Var(m.nn.input_nodes, bounds=self.bounds)
+        m.inputs = pyo.Var(m.nn.input_nodes)
         m.outputs = pyo.Var(m.nn.output_nodes)
         m.y = pyo.Var(m.nn.activated_nodes, domain=pyo.Binary)
 
@@ -232,7 +256,7 @@ class BlockFormulation:
         m.nn = pyo.Block(rule=self._nn_general)
     
         # declare variables
-        m.inputs = pyo.Var(m.nn.input_nodes, bounds=self.bounds)
+        m.inputs = pyo.Var(m.nn.input_nodes)
         m.outputs = pyo.Var(m.nn.output_nodes)
         m.y0 = pyo.Var(m.nn.activated_nodes, domain=pyo.Binary)
         m.y1 = pyo.Var(m.nn.activated_nodes, domain=pyo.Binary)
