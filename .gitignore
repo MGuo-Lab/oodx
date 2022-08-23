@@ -4,3 +4,5 @@
 fort.61
 gurobi.log
 .ipynb_checkpoints
+*.csv
+*.png
