@@ -75,7 +75,19 @@ class BlockFormulation:
 
         # gpr std constraint        
         m.gpr_std = pyo.Constraint(expr=
-            m.outputs[0] == sum(constant_value * pyo.exp(-sum(0.5 / length_scale ** 2 * (m.inputs[j] - x_train[i, j]) ** 2 for j in n_inputs)) * sum(inv_K[i, k] * constant_value * pyo.exp(-sum(0.5 / length_scale ** 2 * (m.inputs[j] - x_train[k, j]) ** 2 for j in n_inputs)) for k in n_samples) for i in n_samples)
+            m.outputs[0] == sum(
+                constant_value * pyo.exp(-sum(
+                    0.5 / length_scale ** 2 * (
+                        m.inputs[j] - x_train[i, j]
+                    ) ** 2 for j in n_inputs
+                )) * sum(
+                    inv_K[i, k] * constant_value * pyo.exp(-sum(
+                        0.5 / length_scale ** 2 * (
+                            m.inputs[j] - x_train[k, j]
+                        ) ** 2 for j in n_inputs
+                    )) for k in n_samples
+                ) for i in n_samples
+            )
         )
 
 

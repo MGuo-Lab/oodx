@@ -71,6 +71,7 @@ class AdaptiveSampler:
         
         m.n_inputs = set(range(len(self.space)))
         m.inputs = pyo.Var(m.n_inputs, bounds=self.space)
+        # this is not flexible - a nn classifier outputs needs to pass through sigmoid
         m.feasibility_con = pyo.Constraint(expr= m.feas.outputs[0] >= 0.5 )
         m.obj = pyo.Objective(expr=m.mdl.outputs[0], sense=pyo.minimize)
         
