@@ -1,5 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "font.serif": ["Palatino"],
+})
 
 
 def peaks(x):
@@ -15,6 +20,14 @@ def func_1d(x):
     return y
 
 
+def feas(x):
+    t = np.ones(len(x))
+    for i in range(x.shape[0]):
+        if ( x[i, 0] ** 2 + x[i, 1] ** 2 > 4 ):
+            t[i] = 0
+    return t.reshape(-1, 1)
+
+
 def plot_sampling(api):
 
     fig = plt.figure(figsize=(4,3))
@@ -27,7 +40,7 @@ def plot_peaks():
     space = [(-3.0, 3.0), (-3.0, 3.0)]
 
     # create figure and axes
-    fig = plt.figure(figsize=(4, 3))
+    fig = plt.figure(figsize=(5, 4))
     ax1 = fig.add_subplot(111)
 
     # get plotting data
@@ -38,8 +51,8 @@ def plot_peaks():
 
     y = peaks(inputs)
 
-    ax1.contourf(x_plot[:, 0], x_plot[:, 1], y.reshape((50, 50)))
-    ax1.title.set_text('underlying model')
+    c = ax1.contourf(x_plot[:, 0], x_plot[:, 1], y.reshape((50, 50)))
+    fig.colorbar(c, ax=ax1)
     plt.show()
 
 
@@ -186,26 +199,53 @@ def plot_activation(activation):
         y = np.tanh(x)
         ax.plot(x, y)
         ax.title.set_text('tanh')
+
+        data = np.c_[x, y]
+
+        headers = 'x,y'
+        np.savetxt('tanh.csv', data, header=headers, delimiter=',', comments='')
+
+
     
     if activation == 'sigmoid':
         f = lambda x: 1 / (1 + np.exp(-x))
         ax.plot(x, f(x))
         ax.title.set_text('sigmoid')
+
+        data = np.c_[x, f(x)]
+
+        headers = 'x,y'
+        np.savetxt('sigmoid.csv', data, header=headers, delimiter=',', comments='')
     
     if activation == 'softplus':
         f = lambda x: np.log(1 + np.exp(x))
         ax.plot(x, f(x))
         ax.title.set_text('softplus')
+
+        data = np.c_[x, f(x)]
+
+        headers = 'x,y'
+        np.savetxt('softplus.csv', data, header=headers, delimiter=',', comments='')
     
     if activation == 'relu':
         f = lambda x: np.maximum(0, x)
         ax.plot(x, f(x))
         ax.title.set_text('relu')
+
+        data = np.c_[x, f(x)]
+
+        headers = 'x,y'
+        np.savetxt('relu.csv', data, header=headers, delimiter=',', comments='')
     
     if activation == 'hardsigmoid':
         f = lambda x: np.maximum(0, np.minimum(x/6 + 0.5, 1))
         ax.plot(x, f(x))
         ax.title.set_text('hardsigmoid')
+
+        data = np.c_[x, f(x)]
+
+        headers = 'x,y'
+        np.savetxt('hardsigmoid.csv', data, header=headers, delimiter=',', comments='')
     
     plt.tight_layout()
 
