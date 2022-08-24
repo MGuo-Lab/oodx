@@ -139,6 +139,7 @@ class AdaptiveSampler:
         m.feas = pyo.Block(rule=BlockFormulation(self.classifier).rule())
         m.n_inputs = set(range(len(self.space)))
         m.inputs = pyo.Var(m.n_inputs, bounds=self.space)
+        m.mod_ei = pyo.Var()
         # this is not flexible - a nn classifier outputs needs to pass through sigmoid
         m.feasibility_con = pyo.Constraint(expr= m.feas.outputs[0] >= 0.5 )
         # connect pyomo model input and output to the surrogate models
@@ -149,15 +150,13 @@ class AdaptiveSampler:
             m.c.add( m.inputs[i] == m.feas.inputs[i] )
 
         m.mod_ei_con = pyo.Constraint(
-            expr=
-            pyo.sqrt(
-                (constant_value - m.mdl_std.outputs[0]) / 2 * 3.1416
-            ) * pyo.exp(
-                - (y_opt - m.mdl.outputs[0]) ** 2 / 2 * (constant_value - m.mdl_std.outputs[0])
+            expr= m.mod_ei ==
+            ((constant_value - m.mdl_std.outputs[0]) / (2 * 3.1416)) ** 0.5 * pyo.exp(
+                - (y_opt - m.mdl.outputs[0]) ** 2 / (2 * (constant_value - m.mdl_std.outputs[0]))
             )
         )
 
-        m.obj = pyo.Objective(expr=m.mod_ei_con, sense=pyo.maximize)
+        m.obj = pyo.Objective(expr=m.mod_ei, sense=pyo.maximize)
 
         res = solver.solve(m, tee=True)
         x = np.fromiter(m.inputs.extract_values().values(), dtype=float).reshape(1, -1)
