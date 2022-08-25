@@ -39,9 +39,9 @@ class AdaptiveSampler:
                     min_x = res.x               
             return min_x.reshape(1, -1)
 
-    def max_gp_std(self, solver=None):
+    def max_gp_std(self, solver=None, tee=True):
         if self.classifier is not None:
-            return self._constrained_max_gp_std(solver)
+            return self._constrained_max_gp_std(solver, tee)
         else:
             return self._scipy_max_gp_std()
     
@@ -101,7 +101,7 @@ class AdaptiveSampler:
                 min_x = res.x
         return min_x.reshape(1, -1)
 
-    def _constrained_max_gp_std(self, solver):
+    def _constrained_max_gp_std(self, solver, tee):
         # initialise pyomo model
         m = pyo.ConcreteModel()
         # formulate pyomo block for gpr std and gpc
@@ -120,7 +120,7 @@ class AdaptiveSampler:
             m.c.add( m.inputs[i] == m.mdl.inputs[i] )
             m.c.add( m.inputs[i] == m.feas.inputs[i] )
         
-        res = solver.solve(m, tee=True)
+        res = solver.solve(m, tee=tee)
         x = np.fromiter(m.inputs.extract_values().values(), dtype=float).reshape(1, -1)
 
         return x
