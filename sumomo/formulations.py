@@ -73,9 +73,9 @@ class BlockFormulation:
         m.inputs = pyo.Var(n_inputs)
         m.outputs = pyo.Var(n_outputs)
 
-        # gpr std constraint        
+        # gpr constraint representing k^T K^-1 k in the std calc
         m.gpr_std = pyo.Constraint(expr=
-            m.outputs[0] == sum(
+            m.outputs[0] == - sum(
                 constant_value * pyo.exp(-sum(
                     0.5 / length_scale ** 2 * (
                         m.inputs[j] - x_train[i, j]
