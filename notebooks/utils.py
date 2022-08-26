@@ -41,6 +41,31 @@ def plot_adaptive_gp(dh, tester, regressor, classifier, new_x):
 
     plt.tight_layout()
 
+def plot_adaptive_nn(dh, tester, regressor, classifier, new_x):
+    x1, x2 = np.linspace(-3, 3, 50), np.linspace(-3, 3, 50)
+    x1grid, x2grid = np.meshgrid(x1, x2)
+    x_new = np.c_[x1grid.ravel(), x2grid.ravel()]
+    x_scaled = dh.scale_x(x_new)
+
+    pred = regressor.predict(x_scaled)
+    pred = dh.inv_scale_y(pred)
+    pred = pred.reshape(x1grid.shape)
+
+    prob = classifier.predict(x_scaled, return_proba=True)[1]
+    prob = prob.reshape(x1grid.shape)
+
+    fig, ax1 = plt.subplots(1, 1, figsize=(5, 4))
+    c1 = ax1.contourf(x1, x2, pred, levels=12, alpha=0.8)
+    ax1.contour(x1, x2, prob, levels=[0.5], linestyles='dashed', colors='k', linewidths=1)
+    ax1.scatter(dh.x[dh.t.ravel()==1, 0], dh.x[dh.t.ravel()==1, 1], c='b', s=10)
+    ax1.scatter(tester.x[tester.t.ravel()==1, 0], tester.x[tester.t.ravel()==1, 1], s=10, facecolors='none', edgecolors='b')
+    ax1.scatter(dh.x[dh.t.ravel()==0, 0], dh.x[dh.t.ravel()==0, 1], c='r', s=10)
+    ax1.scatter(tester.x[tester.t.ravel()==0, 0], tester.x[tester.t.ravel()==0, 1], s=10, facecolors='none', edgecolors='r')
+    ax1.plot(new_x.ravel()[0], new_x.ravel()[1], 'k*')
+    fig.colorbar(c1, ax=ax1)
+
+    plt.tight_layout()
+
 def peaks(x):
     term1 = 3 * (1 - x[:, 0]) ** 2 * np.exp(-(x[:, 0] ** 2) - (x[:, 1] + 1) ** 2)
     term2 = - 10 * (x[:, 0] / 5 - x[:, 0] ** 3 - x[:, 1] ** 5) * np.exp(-x[:, 0] ** 2 - x[:, 1] ** 2)
