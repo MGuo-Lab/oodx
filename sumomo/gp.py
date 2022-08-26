@@ -147,7 +147,8 @@ class GPC:
         self.sigma_f = params.x[1]
         a = self._posterior_mode()
         W = self._sigmoid(a) * (1 - self._sigmoid(a))
-        W = np.diag(W.ravel())
+        I = np.eye(self.x_train.shape[0])
+        W = np.diag(W.ravel()) + 1e-5 * I
         K = self._kernel(self.x_train, self.x_train)
         P = inv(W) + K
         self.inv_P = inv(P)
