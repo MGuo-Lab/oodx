@@ -75,7 +75,11 @@ class AdaptiveSampler:
         # constraints
         m.exactly_one_con = pyo.Constraint(expr= sum(m.y[i] for i in m.n_dt) == 1 )
         m.feas = pyo.Block(rule=BlockFormulation(self.classifier).rule())
-        m.feasibility_con = pyo.Constraint(expr= m.feas.outputs[0] >= 0.5 )
+        # a nn classifier outputs needs to pass through sigmoid
+        if self.classifier.name == 'NN':
+            m.feasibility_con = pyo.Constraint(expr= 1 / (1 + pyo.exp(m.feas.outputs[0])) >= 0.5 )
+        else:
+            m.feasibility_con = pyo.Constraint(expr= m.feas.outputs[0] >= 0.5 )
         m.c = pyo.ConstraintList()
         for i in m.n_inputs:
             m.c.add( m.inputs[i] == sum(centroids[k, i] * m.y[k] for k in m.n_dt) )
@@ -110,8 +114,11 @@ class AdaptiveSampler:
         
         m.n_inputs = set(range(len(self.space)))
         m.inputs = pyo.Var(m.n_inputs, bounds=self.space)
-        # this is not flexible - a nn classifier outputs needs to pass through sigmoid
-        m.feasibility_con = pyo.Constraint(expr= m.feas.outputs[0] >= 0.5 )
+        # a nn classifier outputs needs to pass through sigmoid
+        if self.classifier.name == 'NN':
+            m.feasibility_con = pyo.Constraint(expr= 1 / (1 + pyo.exp(m.feas.outputs[0])) >= 0.5 )
+        else:
+            m.feasibility_con = pyo.Constraint(expr= m.feas.outputs[0] >= 0.5 )
         m.obj = pyo.Objective(expr=m.mdl.outputs[0], sense=pyo.maximize)
         
         # connect pyomo model input and output to the surrogate models
@@ -139,8 +146,11 @@ class AdaptiveSampler:
         m.n_inputs = set(range(len(self.space)))
         m.inputs = pyo.Var(m.n_inputs, bounds=self.space)
         m.mod_ei = pyo.Var()
-        # this is not flexible - a nn classifier outputs needs to pass through sigmoid
-        m.feasibility_con = pyo.Constraint(expr= m.feas.outputs[0] >= 0.5 )
+        # a nn classifier outputs needs to pass through sigmoid
+        if self.classifier.name == 'NN':
+            m.feasibility_con = pyo.Constraint(expr= 1 / (1 + pyo.exp(m.feas.outputs[0])) >= 0.5 )
+        else:
+            m.feasibility_con = pyo.Constraint(expr= m.feas.outputs[0] >= 0.5 )
         # connect pyomo model input and output to the surrogate models
         m.c = pyo.ConstraintList()
         for i in m.n_inputs:
