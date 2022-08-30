@@ -8,3 +8,4 @@ gurobi.log
 *.csv
 *.png
 scripts/
+data/
