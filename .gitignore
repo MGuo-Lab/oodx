@@ -7,3 +7,4 @@ gurobi.log
 .ipynb_checkpoints
 *.csv
 *.png
+scipts/
