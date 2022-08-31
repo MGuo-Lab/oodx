@@ -77,7 +77,7 @@ class AdaptiveSampler:
         m.feas = pyo.Block(rule=BlockFormulation(self.classifier).rule())
         # a nn classifier outputs needs to pass through sigmoid
         if self.classifier.name == 'NN':
-            m.feasibility_con = pyo.Constraint(expr= 1 / (1 + pyo.exp(m.feas.outputs[0])) >= 0.5 )
+            m.feasibility_con = pyo.Constraint(expr= 1 / (1 + pyo.exp(-m.feas.outputs[0])) >= 0.5 )
         else:
             m.feasibility_con = pyo.Constraint(expr= m.feas.outputs[0] >= 0.5 )
         m.c = pyo.ConstraintList()
@@ -116,7 +116,7 @@ class AdaptiveSampler:
         m.inputs = pyo.Var(m.n_inputs, bounds=self.space)
         # a nn classifier outputs needs to pass through sigmoid
         if self.classifier.name == 'NN':
-            m.feasibility_con = pyo.Constraint(expr= 1 / (1 + pyo.exp(m.feas.outputs[0])) >= 0.5 )
+            m.feasibility_con = pyo.Constraint(expr= 1 / (1 + pyo.exp(-m.feas.outputs[0])) >= 0.5 )
         else:
             m.feasibility_con = pyo.Constraint(expr= m.feas.outputs[0] >= 0.5 )
         m.obj = pyo.Objective(expr=m.mdl.outputs[0], sense=pyo.maximize)
@@ -148,7 +148,7 @@ class AdaptiveSampler:
         m.mod_ei = pyo.Var()
         # a nn classifier outputs needs to pass through sigmoid
         if self.classifier.name == 'NN':
-            m.feasibility_con = pyo.Constraint(expr= 1 / (1 + pyo.exp(m.feas.outputs[0])) >= 0.5 )
+            m.feasibility_con = pyo.Constraint(expr= 1 / (1 + pyo.exp(-m.feas.outputs[0])) >= 0.5 )
         else:
             m.feasibility_con = pyo.Constraint(expr= m.feas.outputs[0] >= 0.5 )
         # connect pyomo model input and output to the surrogate models
