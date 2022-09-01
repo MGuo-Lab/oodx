@@ -31,9 +31,9 @@ class Validator:
         self.r2 = None
         self.maxe = None
 
-    def calculate(self, x, y, nn_class=False):
+    def calculate(self, x, y, nn_class=False, threshold=0.5):
         if self._is_classifier():
-            prob_test, class_test = self.model.predict(x, return_class=True)
+            prob_test, class_test = self.model.predict(x, return_class=True, threshold=threshold)
             self.accuracy = accuracy_score(y, class_test)
             self.precision = precision_score(y, class_test)
             self.recall = recall_score(y, class_test)
@@ -41,7 +41,7 @@ class Validator:
             self.log_loss = log_loss(y, prob_test)
         else:
             if nn_class:
-                prob_test, class_test = self.model.predict(x, return_class=True)
+                prob_test, class_test = self.model.predict(x, return_class=True, threshold=threshold)
                 self.accuracy = accuracy_score(y, class_test)
                 self.precision = precision_score(y, class_test)
                 self.recall = recall_score(y, class_test)
