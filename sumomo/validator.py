@@ -41,16 +41,15 @@ class Validator:
             self.log_loss = log_loss(y, prob_test)
         else:
             if nn_class:
-                prob_test, class_test = self.model.predict(x, return_class=True, threshold=threshold)
+                _, prob_test, class_test = self.model.predict(x, return_proba=True, return_class=True, threshold=threshold)
                 self.accuracy = accuracy_score(y, class_test)
                 self.precision = precision_score(y, class_test)
                 self.recall = recall_score(y, class_test)
                 self.f1 = f1_score(y, class_test)
                 self.log_loss = log_loss(y, prob_test)
             else:
-                # note that these regression errors are in the scaled space
                 pred_test_ = self.model.predict(x)
-                pred_test = self.scaler.inv_scale_y(pred_test_)
+                pred_test = self.scaler.inv_scale_y(pred_test_)  # scale to original space
                 self.mae = mean_absolute_error(y, pred_test)
                 self.mse = mean_squared_error(y, pred_test)
                 self.mape = mean_absolute_percentage_error(y, pred_test)
