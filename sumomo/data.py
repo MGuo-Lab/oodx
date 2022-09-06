@@ -70,6 +70,13 @@ class DataHandler:
             input_space = Space(self.space)
             sobol_samples = sobol.generate(input_space.dimensions, n_samples)
             self.x = np.array(sobol_samples)
+        
+        elif method == 'grid':
+            n = int(np.sqrt(n_samples))
+            x1, x2 = np.linspace(*self.space[0], n), np.linspace(*self.space[1], n)
+            x1_grid, x2_grid = np.meshgrid(x1, x2)
+            grid = np.c_[x1_grid.ravel(), x2_grid.ravel()]
+            self.x = np.array(grid)
     
 
     def split(self, test_size=0.3):
