@@ -62,3 +62,71 @@ print(precision)
 print(recall)
 
 ```
+
+## Surrogate-based optimisation example
+
+```python
+import pyomo.environ as pyo
+from scripts.functions import BlackBox
+from sumomo import (
+    DataHandler, GPR, GPC, BlockFormulation
+)
+
+
+# initialise data handler
+data = DataHandler()
+n_samples = 100
+space = [(-3.0, 3.0), (-3.0, 3.0)]
+data.init(n_samples, space)
+
+# sample data from the black box
+bb = BlackBox()
+data.y = bb.sample_y(data.x)
+data.t = bb.sample_t(data.x)
+
+# initilise and fit regression model
+regressor = GPR()
+regressor.fit(data.x, data.y)
+
+# initialise and fit classification model
+classifier = GPC()
+classifier.fit(data.x, data.t)
+
+# pyomo formulation, sets, and variables
+omo = pyo.ConcreteModel()
+omo.n_inputs = set(range(len(data.space)))
+omo.inputs = pyo.Var(omo.n_inputs, bounds=data.space)
+omo.output = pyo.Var()
+omo.proba = pyo.Var()
+
+# feasibility constraint 
+omo.feasibility_con = pyo.Constraint(expr=
+    omo.proba >= 0.5 
+)
+
+# objective function to maximise performance
+omo.obj = pyo.Objective(
+    expr=omo.output, sense=pyo.maximize)
+
+# formulate pyomo blocks for regressor and classifier
+omo.reg = pyo.Block(rule= 
+    BlockFormulation(regressor).rule()
+)
+omo.cla = pyo.Block(rule=
+    BlockFormulation(classifier).rule()
+)
+
+# connect pyomo model input and output to the surrogate models
+omo.c = pyo.ConstraintList()
+omo.c.add( omo.output == omo.reg.outputs[0] )
+omo.c.add( omo.proba == omo.cla.outputs[0] )
+for i in omo.n_inputs:
+    omo.c.add( omo.inputs[i] == omo.reg.inputs[i] )
+    omo.c.add( omo.inputs[i] == omo.cla.inputs[i] )
+
+# solve
+solver = pyo.SolverFactory('baron')
+solver.solve(omo)
+
+```
+
