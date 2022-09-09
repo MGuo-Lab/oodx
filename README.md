@@ -20,7 +20,7 @@ from sklearn.metrics import (
     mean_squared_error
 )
 from sumomo import DataHandler, GPR, GPC
-from sumomo.functions import BlackBox
+from sumomo.examples import BlackBox
 
 
 # initialise data handler
@@ -66,7 +66,7 @@ print(recall)
 
 ```python
 import pyomo.environ as pyo
-from sumomo.functions import BlackBox
+from sumomo.examples import BlackBox
 from sumomo import (
     DataHandler, GPR, GPC, BlockFormulation
 )
