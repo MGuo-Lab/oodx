@@ -21,7 +21,8 @@ class GPR(GaussianProcessRegressor):
 
     def fit(self, x, y):
         self.x_train = x
-        super().fit(x, y)
+        with np.errstate(divide='ignore'):
+            super().fit(x, y)
         self._save_params()
     
     def _save_params(self):
