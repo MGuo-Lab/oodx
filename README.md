@@ -19,9 +19,8 @@ from sklearn.metrics import (
     recall_score, 
     mean_squared_error
 )
-
-from scripts.functions import BlackBox
 from sumomo import DataHandler, GPR, GPC
+from sumomo.functions import BlackBox
 
 
 # initialise data handler
@@ -67,7 +66,7 @@ print(recall)
 
 ```python
 import pyomo.environ as pyo
-from scripts.functions import BlackBox
+from sumomo.functions import BlackBox
 from sumomo import (
     DataHandler, GPR, GPC, BlockFormulation
 )
