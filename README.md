@@ -4,9 +4,15 @@
   width=150>
 
 ## Sumomo: Surrogate Modelling and Optimisation
-Sumomo is a Python package for surrogate modelling formulating optimisation problems using *Pyomo*. Surrogate models include Gaussian processes and neural networks for regression and classification. sumomo enables an entire surrogate modelling workflow and abstracted *Pyomo* formulations to be incorporated into larger optimisation problems.
+Sumomo is a Python package, designed to be used in conjunction with *Pyomo*, for formulating surrogate models within larger decision-making problems. Surrogate models include Gaussian processes and neural networks for both regression and classification. Sumomo contains objects:
 
-## Example
+* DataHandler for generating initial sampling strategies as well as processing and storing data
+* GPR and GPC for Gaussian process regression and classification models, respectively
+* NN for neural networks for regression or classification
+* AdaptiveSampler for generating adaptive samples for surrogate modelling
+* BlockFormulation for building abstracted *Pyomo* formulations from trained surrogate models
+
+## Surrogate modelling example
 ```python
 from sklearn.metrics import (
     precision_score, 
