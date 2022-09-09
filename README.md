@@ -8,44 +8,51 @@ Sumomo is a Python package for surrogate modelling formulating optimisation prob
 
 ## Example
 ```python
-from scripts.functions import BlackBox
 from sklearn.metrics import (
     precision_score, 
     recall_score, 
     mean_squared_error
 )
 
+from scripts.functions import BlackBox
 from sumomo import DataHandler, GPR, GPC
 
 
-bb = BlackBox()
+# initialise data handler
+data = DataHandler()
 n_samples = 100
 space = [(-3.0, 3.0), (-3.0, 3.0)]
-
-data = DataHandler()
 data.init(n_samples, space)
+
+# sample data from the black box
+bb = BlackBox()
 data.y = bb.sample_y(data.x)
 data.t = bb.sample_t(data.x)
+
+# train-test-split and standardise data
 data.split(test_size=0.2)
 data.scale()
 
+# initilise and fit regression model
 regressor = GPR()
-classifier = GPC()
-
 regressor.fit(data.x_train_, data.y_train_)
+
+# initialise and fit classification model
+classifier = GPC()
 classifier.fit(data.x_train_, data.t_train)
 
+# make regression and classification predictions
 predictions = regressor.predict(data.x_test_)
 predictions = data.inv_scale_y(predictions)
-
 probabilities, classes = classifier.predict(
     data.x_test_, return_class=True)
 
+# evaluate validation metrics
 error = mean_squared_error(data.y_test, predictions)
 precision = precision_score(data.t_test, classes)
 recall = recall_score(data.t_test, classes)
-
 print(error)
 print(precision)
 print(recall)
+
 ```
