@@ -168,7 +168,7 @@ class GPC:
             a.T.dot(inv_K).dot(a) + 
             slogdet(K)[1] + 
             slogdet(W+inv_K)[1])
-        return -ll
+        return -ll.ravel()
 
     @staticmethod
     def _sigmoid(a):
