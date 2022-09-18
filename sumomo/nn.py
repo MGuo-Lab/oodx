@@ -3,8 +3,11 @@ from torch import nn
 
 
 class NN(nn.Sequential):
-    def __init__(self, layers, activation='tanh'):
-        self.name = 'NN'
+    def __init__(self, layers, activation='tanh', is_classifier=False):
+        if is_classifier:
+            self.name = 'NNClf'
+        else:
+            self.name = 'NN'
         self.layers = layers
         self.activation = activation
         self.weights = []
@@ -12,6 +15,8 @@ class NN(nn.Sequential):
         super().__init__(*self._build_layers(layers))
     
     def fit(self, x, y, batch_size=10, epochs=1000, learning_rate=1e-2, loss_func=nn.MSELoss()):
+        if self.name == 'NNClf':
+            loss_func = nn.BCEWithLogitsLoss()
         x_train, y_train = torch.Tensor(x), torch.Tensor(y)
         optimiser = torch.optim.Adam(self.parameters(), lr=learning_rate)
         self.train()
@@ -42,6 +47,9 @@ class NN(nn.Sequential):
             return y.numpy(), proba.numpy()
         else:
             return y.numpy()
+    
+    def score(self):
+        pass
     
     def _get_params(self):
         for layer in self:
