@@ -48,9 +48,6 @@ class NN(nn.Sequential):
         else:
             return y.numpy()
     
-    def score(self):
-        pass
-    
     def _get_params(self):
         for layer in self:
             if isinstance(layer, nn.Linear):
