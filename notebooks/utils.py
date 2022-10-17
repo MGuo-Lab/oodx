@@ -7,7 +7,338 @@ plt.rcParams.update({
 })
 
 
-def plot_adaptive_gp(dh, tester, regressor, classifier, new_x):
+class BlackBox:
+    def __init__(self):
+        pass
+    
+    def sample_y(self, x):
+        return peaks(x)
+    
+    def sample_t(self, x):
+        return feas(x)
+
+
+def peaks(x):
+    term1 = 3 * (1 - x[:, 0]) ** 2 * np.exp(-(x[:, 0] ** 2) - (x[:, 1] + 1) ** 2)
+    term2 = - 10 * (x[:, 0] / 5 - x[:, 0] ** 3 - x[:, 1] ** 5) * np.exp(-x[:, 0] ** 2 - x[:, 1] ** 2)
+    term3 = - 1 / 3 * np.exp(-(x[:, 0] + 1) ** 2 - x[:, 1] ** 2)
+    y = sum([term1, term2, term3])
+    return y.reshape(-1, 1)
+
+
+def feas(x):
+    t = np.ones(len(x))
+    for i in range(x.shape[0]):
+        if ( x[i, 0] ** 2 + x[i, 1] ** 2 > 4 ):
+            t[i] = 0
+    return t.reshape(-1, 1)
+
+
+def plot_underlying():
+    space = [(-3.0, 3.0), (-3.0, 3.0)]
+
+    # create figure and axes
+    fig = plt.figure(figsize=(5, 4))
+    ax1 = fig.add_subplot(111)
+
+    # get plotting data
+    x1, x2 = np.linspace(*space[0], 50), np.linspace(*space[1], 50)
+    x_plot = np.c_[x1, x2]
+    x1_grid, x2_grid = np.meshgrid(x1, x2)
+    inputs = np.c_[x1_grid.ravel(), x2_grid.ravel()]
+
+    y = peaks(inputs)
+    circle = plt.Circle((0, 0), 2, color='k', linestyle='--', fill=False, linewidth=1)
+
+    c = ax1.contourf(x_plot[:, 0], x_plot[:, 1], y.reshape((50, 50)))
+    ax1.add_patch(circle)
+    fig.colorbar(c, ax=ax1)
+
+    ax1.set_xlabel(r'$x_0$')
+    ax1.set_ylabel(r'$x_1$')
+
+    plt.show()
+
+
+def plot_gpr(space, data_handler, gpr):
+    x1, x2 = np.linspace(*space[0], 50), np.linspace(*space[1], 50)
+    x1grid, x2grid = np.meshgrid(x1, x2)
+    x_new = np.c_[x1grid.ravel(), x2grid.ravel()]
+    x_scaled = data_handler.scale_x(x_new)
+
+    pred, std = gpr.predict(x_scaled, return_std=True)
+    pred, std = data_handler.inv_scale_y(pred), std * data_handler.y_std
+    pred, std = pred.reshape(x1grid.shape), std.reshape(x1grid.shape)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+    c1 = ax1.contourf(x1, x2, pred, levels=12, alpha=0.8)
+    fig.colorbar(c1, ax=ax1)
+
+    c2 = ax2.contourf(x1, x2, std, levels=12, alpha=0.8)
+    fig.colorbar(c2, ax=ax2)
+
+    ax1.set_xlabel(r'$x_0$')
+    ax1.set_ylabel(r'$x_1$')
+
+    ax2.set_xlabel(r'$x_0$')
+    ax2.set_ylabel(r'$x_1$')
+
+    if data_handler.x_train is None:
+        ax1.scatter(data_handler.x[data_handler.t.ravel()==1, 0], data_handler.x[data_handler.t.ravel()==1, 1], c='b', s=10)
+        ax1.scatter(data_handler.x[data_handler.t.ravel()==0, 0], data_handler.x[data_handler.t.ravel()==0, 1], c='r', s=10)
+        ax2.scatter(data_handler.x[data_handler.t.ravel()==1, 0], data_handler.x[data_handler.t.ravel()==1, 1], c='b', s=10)
+        ax2.scatter(data_handler.x[data_handler.t.ravel()==0, 0], data_handler.x[data_handler.t.ravel()==0, 1], c='r', s=10)
+    else:
+        ax1.scatter(data_handler.x_train[data_handler.t_train.ravel()==1, 0], data_handler.x_train[data_handler.t_train.ravel()==1, 1], c='b', s=10)
+        ax1.scatter(data_handler.x_test[data_handler.t_test.ravel()==1, 0], data_handler.x_test[data_handler.t_test.ravel()==1, 1], s=10, facecolors='none', edgecolors='b')
+        ax1.scatter(data_handler.x_train[data_handler.t_train.ravel()==0, 0], data_handler.x_train[data_handler.t_train.ravel()==0, 1], c='r', s=10)
+        ax1.scatter(data_handler.x_test[data_handler.t_test.ravel()==0, 0], data_handler.x_test[data_handler.t_test.ravel()==0, 1], s=10, facecolors='none', edgecolors='r')
+        ax2.scatter(data_handler.x_train[data_handler.t_train.ravel()==1, 0], data_handler.x_train[data_handler.t_train.ravel()==1, 1], c='b', s=10)
+        ax2.scatter(data_handler.x_test[data_handler.t_test.ravel()==1, 0], data_handler.x_test[data_handler.t_test.ravel()==1, 1], s=10, facecolors='none', edgecolors='b')
+        ax2.scatter(data_handler.x_train[data_handler.t_train.ravel()==0, 0], data_handler.x_train[data_handler.t_train.ravel()==0, 1], c='r', s=10)
+        ax2.scatter(data_handler.x_test[data_handler.t_test.ravel()==0, 0], data_handler.x_test[data_handler.t_test.ravel()==0, 1], s=10, facecolors='none', edgecolors='r')
+    
+    plt.tight_layout()
+
+
+def plot_gp_opt(space, data_handler, gpr, gpc, sol):
+    x1, x2 = np.linspace(*space[0], 50), np.linspace(*space[1], 50)
+    x1grid, x2grid = np.meshgrid(x1, x2)
+    x_new = np.c_[x1grid.ravel(), x2grid.ravel()]
+    x_scaled = data_handler.scale_x(x_new)
+
+    pred = gpr.predict(x_scaled)
+    pred = data_handler.inv_scale_y(pred)
+    pred = pred.reshape(x1grid.shape)
+
+    prob = gpc.predict(x_scaled)
+    prob = prob.reshape(x1grid.shape)
+
+    fig, ax1 = plt.subplots(1, 1, figsize=(5, 4))
+    c1 = ax1.contourf(x1, x2, pred, levels=12, alpha=0.8)
+    ax1.contour(x1, x2, prob, levels=[0.5], linestyles='dashed', colors='k', linewidths=1)
+    ax1.scatter(data_handler.x[data_handler.t.ravel()==1, 0], data_handler.x[data_handler.t.ravel()==1, 1], c='b', s=10)
+    ax1.scatter(data_handler.x[data_handler.t.ravel()==0, 0], data_handler.x[data_handler.t.ravel()==0, 1], c='r', s=10)
+    ax1.plot(sol[0], sol[1], 'k*')
+    fig.colorbar(c1, ax=ax1)
+
+    plt.tight_layout()
+
+
+def plot_adaptive_gp(space, data_handler, gpr, gpc, sol):
+    x1, x2 = np.linspace(*space[0], 50), np.linspace(*space[1], 50)
+    x1grid, x2grid = np.meshgrid(x1, x2)
+    x_new = np.c_[x1grid.ravel(), x2grid.ravel()]
+    x_scaled = data_handler.scale_x(x_new)
+
+    pred = gpr.predict(x_scaled, return_std=True)[1]
+    pred = pred * data_handler.y_std
+    pred = pred.reshape(x1grid.shape)
+
+    prob = gpc.predict(x_scaled)
+    prob = prob.reshape(x1grid.shape)
+
+    fig, ax1 = plt.subplots(1, 1, figsize=(5, 4))
+    c1 = ax1.contourf(x1, x2, pred, levels=12, alpha=0.8)
+    ax1.contour(x1, x2, prob, levels=[0.5], linestyles='dashed', colors='k', linewidths=1)
+    ax1.scatter(data_handler.x[data_handler.t.ravel()==1, 0], data_handler.x[data_handler.t.ravel()==1, 1], c='b', s=10)
+    ax1.scatter(data_handler.x[data_handler.t.ravel()==0, 0], data_handler.x[data_handler.t.ravel()==0, 1], c='r', s=10)
+    ax1.plot(sol[0], sol[1], 'k*')
+    fig.colorbar(c1, ax=ax1)
+
+    plt.tight_layout()
+
+
+def plot_adaptive_triangles(space, data_handler, gpr, gpc, sol, ads):
+    x1, x2 = np.linspace(*space[0], 50), np.linspace(*space[1], 50)
+    x1grid, x2grid = np.meshgrid(x1, x2)
+    x_new = np.c_[x1grid.ravel(), x2grid.ravel()]
+    x_scaled = data_handler.scale_x(x_new)
+
+    pred = peaks(x_new)
+    pred = pred.reshape(x1grid.shape)
+
+    prob = gpc.predict(x_scaled)
+    prob = prob.reshape(x1grid.shape)
+
+    fig, ax1 = plt.subplots(1, 1, figsize=(5, 4))
+    c1 = ax1.contourf(x1, x2, pred, levels=12, alpha=0.8)
+    # ax1.contour(x1, x2, prob, levels=[0.5], linestyles='dashed', colors='k', linewidths=1)
+    ax1.scatter(data_handler.x[data_handler.t.ravel()==1, 0], data_handler.x[data_handler.t.ravel()==1, 1], c='b', s=10)
+    ax1.scatter(data_handler.x[data_handler.t.ravel()==0, 0], data_handler.x[data_handler.t.ravel()==0, 1], c='r', s=10)
+    ax1.plot(sol[0], sol[1], 'w*')
+    ax1.triplot(data_handler.x[:, 0], data_handler.x[:, 1], ads.delaunay.simplices, c='k', lw=0.2)
+    fig.colorbar(c1, ax=ax1)
+
+    plt.tight_layout()
+
+
+def plot_nn_opt(space, data_handler, nnr, nnc, sol):
+    x1, x2 = np.linspace(*space[0], 50), np.linspace(*space[1], 50)
+    x1grid, x2grid = np.meshgrid(x1, x2)
+    x_new = np.c_[x1grid.ravel(), x2grid.ravel()]
+    x_scaled = data_handler.scale_x(x_new)
+
+    pred = nnr.predict(x_scaled)
+    pred = data_handler.inv_scale_y(pred)
+    pred = pred.reshape(x1grid.shape)
+
+    logits = nnc.predict(x_scaled)
+    logits = logits.reshape(x1grid.shape)
+
+    fig, ax1 = plt.subplots(1, 1, figsize=(5, 4))
+    c1 = ax1.contourf(x1, x2, pred, levels=12, alpha=0.8)
+    ax1.contour(x1, x2, logits, levels=[0.0], linestyles='dashed', colors='k', linewidths=1)
+    ax1.scatter(data_handler.x[data_handler.t.ravel()==1, 0], data_handler.x[data_handler.t.ravel()==1, 1], c='b', s=10)
+    ax1.scatter(data_handler.x[data_handler.t.ravel()==0, 0], data_handler.x[data_handler.t.ravel()==0, 1], c='r', s=10)
+    ax1.plot(sol[0], sol[1], 'k*')
+    fig.colorbar(c1, ax=ax1)
+
+    plt.tight_layout()
+
+
+def plot_nnr(space, data_handler, nnr):
+    x1, x2 = np.linspace(*space[0], 50), np.linspace(*space[1], 50)
+    x1grid, x2grid = np.meshgrid(x1, x2)
+    x_new = np.c_[x1grid.ravel(), x2grid.ravel()]
+    x_scaled = data_handler.scale_x(x_new)
+
+    pred = nnr.predict(x_scaled)
+    pred = data_handler.inv_scale_y(pred)
+    pred = pred.reshape(x1grid.shape)
+
+    fig, ax1 = plt.subplots(1, 1, figsize=(5, 4))
+    c1 = ax1.contourf(x1, x2, pred, levels=12, alpha=0.8)
+    ax1.scatter(data_handler.x_train[data_handler.t_train.ravel()==1, 0], data_handler.x_train[data_handler.t_train.ravel()==1, 1], c='b', s=10)
+    ax1.scatter(data_handler.x_test[data_handler.t_test.ravel()==1, 0], data_handler.x_test[data_handler.t_test.ravel()==1, 1], s=10, facecolors='none', edgecolors='b')
+    ax1.scatter(data_handler.x_train[data_handler.t_train.ravel()==0, 0], data_handler.x_train[data_handler.t_train.ravel()==0, 1], c='r', s=10)
+    ax1.scatter(data_handler.x_test[data_handler.t_test.ravel()==0, 0], data_handler.x_test[data_handler.t_test.ravel()==0, 1], s=10, facecolors='none', edgecolors='r')
+    fig.colorbar(c1, ax=ax1)
+
+    ax1.set_xlabel(r'$x_0$')
+    ax1.set_ylabel(r'$x_1$')
+
+    plt.tight_layout()
+
+
+def plot_gpr_gpc(space, data_handler, gpr, gpc):
+    x1, x2 = np.linspace(*space[0], 50), np.linspace(*space[1], 50)
+    x1grid, x2grid = np.meshgrid(x1, x2)
+    x_new = np.c_[x1grid.ravel(), x2grid.ravel()]
+    x_scaled = data_handler.scale_x(x_new)
+
+    pred, std = gpr.predict(x_scaled, return_std=True)
+    pred, std = data_handler.inv_scale_y(pred), std * data_handler.y_std
+    pred, std = pred.reshape(x1grid.shape), std.reshape(x1grid.shape)
+
+    prob = gpc.predict(x_scaled)
+    prob = prob.reshape(x1grid.shape)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+    c1 = ax1.contourf(x1, x2, pred, levels=12, alpha=0.8)
+    ax1.contour(x1, x2, prob, levels=[0.5], linestyles='dashed', colors='k', linewidths=1)
+    fig.colorbar(c1, ax=ax1)
+
+    c2 = ax2.contourf(x1, x2, std, levels=12, alpha=0.8)
+    ax2.contour(x1, x2, prob, levels=[0.5], linestyles='dashed', colors='k', linewidths=1)
+    fig.colorbar(c2, ax=ax2)
+
+    if data_handler.x_train is None:
+        ax1.scatter(data_handler.x[data_handler.t.ravel()==1, 0], data_handler.x[data_handler.t.ravel()==1, 1], c='b', s=10)
+        ax1.scatter(data_handler.x[data_handler.t.ravel()==0, 0], data_handler.x[data_handler.t.ravel()==0, 1], c='r', s=10)
+        ax2.scatter(data_handler.x[data_handler.t.ravel()==1, 0], data_handler.x[data_handler.t.ravel()==1, 1], c='b', s=10)
+        ax2.scatter(data_handler.x[data_handler.t.ravel()==0, 0], data_handler.x[data_handler.t.ravel()==0, 1], c='r', s=10)
+    else:
+        ax1.scatter(data_handler.x_train[data_handler.t_train.ravel()==1, 0], data_handler.x_train[data_handler.t_train.ravel()==1, 1], c='b', s=10)
+        ax1.scatter(data_handler.x_test[data_handler.t_test.ravel()==1, 0], data_handler.x_test[data_handler.t_test.ravel()==1, 1], s=10, facecolors='none', edgecolors='b')
+        ax1.scatter(data_handler.x_train[data_handler.t_train.ravel()==0, 0], data_handler.x_train[data_handler.t_train.ravel()==0, 1], c='r', s=10)
+        ax1.scatter(data_handler.x_test[data_handler.t_test.ravel()==0, 0], data_handler.x_test[data_handler.t_test.ravel()==0, 1], s=10, facecolors='none', edgecolors='r')
+        ax2.scatter(data_handler.x_train[data_handler.t_train.ravel()==1, 0], data_handler.x_train[data_handler.t_train.ravel()==1, 1], c='b', s=10)
+        ax2.scatter(data_handler.x_test[data_handler.t_test.ravel()==1, 0], data_handler.x_test[data_handler.t_test.ravel()==1, 1], s=10, facecolors='none', edgecolors='b')
+        ax2.scatter(data_handler.x_train[data_handler.t_train.ravel()==0, 0], data_handler.x_train[data_handler.t_train.ravel()==0, 1], c='r', s=10)
+        ax2.scatter(data_handler.x_test[data_handler.t_test.ravel()==0, 0], data_handler.x_test[data_handler.t_test.ravel()==0, 1], s=10, facecolors='none', edgecolors='r')
+
+    plt.tight_layout()
+
+
+def plot_gpc(space, data_handler, gpc):
+    x1, x2 = np.linspace(*space[0], 50), np.linspace(*space[1], 50)
+    x1grid, x2grid = np.meshgrid(x1, x2)
+    x_new = np.c_[x1grid.ravel(), x2grid.ravel()]
+    x_scaled = data_handler.scale_x(x_new)
+
+    pred, std = gpc.predict(x_scaled, return_std=True)
+    pred, std = pred.reshape(x1grid.shape), std.reshape(x1grid.shape)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+    c1 = ax1.contourf(x1, x2, pred, levels=12, alpha=0.8)
+    ax1.contour(x1, x2, pred, levels=[0.5], linestyles='dashed', colors='k', linewidths=1)
+    fig.colorbar(c1, ax=ax1)
+
+    c2 = ax2.contourf(x1, x2, std, levels=12, alpha=0.8)
+    ax2.contour(x1, x2, pred, levels=[0.5], linestyles='dashed', colors='k', linewidths=1)
+    fig.colorbar(c2, ax=ax2)
+
+    ax1.set_xlabel(r'$x_0$')
+    ax1.set_ylabel(r'$x_1$')
+
+    ax2.set_xlabel(r'$x_0$')
+    ax2.set_ylabel(r'$x_1$')
+
+    if data_handler.x_train is None:
+        ax1.scatter(data_handler.x[data_handler.t.ravel()==1, 0], data_handler.x[data_handler.t.ravel()==1, 1], c='b', s=10)
+        ax1.scatter(data_handler.x[data_handler.t.ravel()==0, 0], data_handler.x[data_handler.t.ravel()==0, 1], c='r', s=10)
+        ax2.scatter(data_handler.x[data_handler.t.ravel()==1, 0], data_handler.x[data_handler.t.ravel()==1, 1], c='b', s=10)
+        ax2.scatter(data_handler.x[data_handler.t.ravel()==0, 0], data_handler.x[data_handler.t.ravel()==0, 1], c='r', s=10)
+    else:
+        ax1.scatter(data_handler.x_train[data_handler.t_train.ravel()==1, 0], data_handler.x_train[data_handler.t_train.ravel()==1, 1], c='b', s=10)
+        ax1.scatter(data_handler.x_test[data_handler.t_test.ravel()==1, 0], data_handler.x_test[data_handler.t_test.ravel()==1, 1], s=10, facecolors='none', edgecolors='b')
+        ax1.scatter(data_handler.x_train[data_handler.t_train.ravel()==0, 0], data_handler.x_train[data_handler.t_train.ravel()==0, 1], c='r', s=10)
+        ax1.scatter(data_handler.x_test[data_handler.t_test.ravel()==0, 0], data_handler.x_test[data_handler.t_test.ravel()==0, 1], s=10, facecolors='none', edgecolors='r')
+        ax2.scatter(data_handler.x_train[data_handler.t_train.ravel()==1, 0], data_handler.x_train[data_handler.t_train.ravel()==1, 1], c='b', s=10)
+        ax2.scatter(data_handler.x_test[data_handler.t_test.ravel()==1, 0], data_handler.x_test[data_handler.t_test.ravel()==1, 1], s=10, facecolors='none', edgecolors='b')
+        ax2.scatter(data_handler.x_train[data_handler.t_train.ravel()==0, 0], data_handler.x_train[data_handler.t_train.ravel()==0, 1], c='r', s=10)
+        ax2.scatter(data_handler.x_test[data_handler.t_test.ravel()==0, 0], data_handler.x_test[data_handler.t_test.ravel()==0, 1], s=10, facecolors='none', edgecolors='r')
+
+    plt.tight_layout()
+
+
+def plot_nnc(space, data_handler, nnc):
+    x1, x2 = np.linspace(*space[0], 50), np.linspace(*space[1], 50)
+    x1grid, x2grid = np.meshgrid(x1, x2)
+    x_new = np.c_[x1grid.ravel(), x2grid.ravel()]
+    x_scaled = data_handler.scale_x(x_new)
+
+    pred, proba = nnc.predict(x_scaled, return_proba=True)
+    pred, proba = pred.reshape(x1grid.shape), proba.reshape(x1grid.shape)
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4))
+    c1 = ax1.contourf(x1, x2, pred, levels=12, alpha=0.8)
+    ax1.contour(x1, x2, pred, levels=[0.0], linestyles='dashed', colors='k', linewidths=1)
+    ax1.scatter(data_handler.x_train[data_handler.t_train.ravel()==1, 0], data_handler.x_train[data_handler.t_train.ravel()==1, 1], c='b', s=10)
+    ax1.scatter(data_handler.x_test[data_handler.t_test.ravel()==1, 0], data_handler.x_test[data_handler.t_test.ravel()==1, 1], s=10, facecolors='none', edgecolors='b')
+    ax1.scatter(data_handler.x_train[data_handler.t_train.ravel()==0, 0], data_handler.x_train[data_handler.t_train.ravel()==0, 1], c='r', s=10)
+    ax1.scatter(data_handler.x_test[data_handler.t_test.ravel()==0, 0], data_handler.x_test[data_handler.t_test.ravel()==0, 1], s=10, facecolors='none', edgecolors='r')
+    fig.colorbar(c1, ax=ax1)
+
+    c2 = ax2.contourf(x1, x2, proba, levels=12, alpha=0.8)
+    ax2.contour(x1, x2, proba, levels=[0.5], linestyles='dashed', colors='k', linewidths=1)
+    ax2.scatter(data_handler.x_train[data_handler.t_train.ravel()==1, 0], data_handler.x_train[data_handler.t_train.ravel()==1, 1], c='b', s=10)
+    ax2.scatter(data_handler.x_test[data_handler.t_test.ravel()==1, 0], data_handler.x_test[data_handler.t_test.ravel()==1, 1], s=10, facecolors='none', edgecolors='b')
+    ax2.scatter(data_handler.x_train[data_handler.t_train.ravel()==0, 0], data_handler.x_train[data_handler.t_train.ravel()==0, 1], c='r', s=10)
+    ax2.scatter(data_handler.x_test[data_handler.t_test.ravel()==0, 0], data_handler.x_test[data_handler.t_test.ravel()==0, 1], s=10, facecolors='none', edgecolors='r')
+    fig.colorbar(c2, ax=ax2)
+
+    ax1.set_xlabel(r'$x_0$')
+    ax1.set_ylabel(r'$x_1$')
+
+    ax2.set_xlabel(r'$x_0$')
+    ax2.set_ylabel(r'$x_1$')
+
+    plt.tight_layout()
+
+
+def plot_adaptive_gp_old(dh, tester, regressor, classifier, new_x):
     x1, x2 = np.linspace(-3, 3, 50), np.linspace(-3, 3, 50)
     x1grid, x2grid = np.meshgrid(x1, x2)
     x_new = np.c_[x1grid.ravel(), x2grid.ravel()]
