@@ -141,8 +141,6 @@ class BlockFormulation:
         m.a = pyo.Var(m.N)
         m.outputs = pyo.Var(m.nodes[len(self.model.layers) - 1])
 
-        m.inputs.pprint()
-
         # constraints
         m.c = pyo.ConstraintList()
 
@@ -154,7 +152,7 @@ class BlockFormulation:
                 m.c.add(m.z[(l, n)] == sum(W[l - 1][n, k] * m.a[(l - 1, k)] for k in m.nodes[l - 1]) + b[l - 1][n])
         
         for n in m.nodes[len(self.model.layers) - 1]:
-            m.c.add( m.outputs[n] == m.z[(l, n)] )
+            m.c.add( m.outputs[n] == m.z[(len(self.model.layers) - 1, n)] )
 
 
     def _nn_tanh_rule(self, m):
