@@ -1,34 +1,37 @@
 import pyomo.environ as pyo
 
 
-class BlockFormulation:
+class SumoBlock:
 
     def __init__(self, model):
         self.model = model
+        self.formulation = None
     
 
-    def rule(self, return_std=False):
+    def get_formulation(self, return_std=False):
         
         if self.model.name == 'NN':
             if self.model.activation == 'relu':
-                return self._nn_relu_rule
+                self.formulation = pyo.Block(rule=self._nn_relu_rule)
             if self.model.activation == 'tanh':
-                return self._nn_tanh_rule
+                self.formulation = pyo.Block(rule=self._nn_tanh_rule)
             if self.model.activation == 'softplus':
-                return self._nn_softplus_rule
+                self.formulation = pyo.Block(rule=self._nn_softplus_rule)
             if self.model.activation == 'sigmoid':
-                return self._nn_sigmoid_rule
+                self.formulation = pyo.Block(rule=self._nn_sigmoid_rule)
             if self.model.activation == 'hardsigmoid':
-                return self._nn_hardsigmoid_rule
+                self.formulation = pyo.Block(rule=self._nn_hardsigmoid_rule)
         
         if self.model.name == 'GPR':
             if return_std:
-                return self._gpr_std_rule
+                self.formulation = pyo.Block(rule=self._gpr_std_rule)
             else:
-                return self._gpr_rule
+                self.formulation = pyo.Block(rule=self._gpr_rule)
         
         if self.model.name == 'GPC':
-            return self._gpc_rule
+            self.formulation = pyo.Block(rule=self._gpc_rule)
+        
+        return self.formulation
 
 
     def _gpr_rule(self, m):
