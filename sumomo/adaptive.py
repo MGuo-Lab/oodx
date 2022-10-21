@@ -9,19 +9,17 @@ from .formulations import SumoBlock
 
 
 class AdaptiveSampler:
-    def __init__(self, space, model=None, classifier=None):
+    def __init__(self, space):
         self.space = space
-        self.model = model
-        self.classifier = classifier
         self.delaunay = None
 
-    def max_gp_std(self):
+    def max_gp_std(self, model):
         ''' maximise a Gaussian process regression standard deviation in predictions
             this is an exploration only adaptive sampling method
         '''
         m = pyo.ConcreteModel()
         
-        block = SumoBlock(self.model)
+        block = SumoBlock(model)
         m.mdl = block.get_formulation(return_std=True)
         
         m.n_inputs = set(range(len(self.space)))
@@ -34,7 +32,7 @@ class AdaptiveSampler:
             m.c.add( m.inputs[i] == m.mdl.inputs[i] )
         return m
 
-    def max_constrained_gp_std(self):
+    #def max_constrained_gp_std(self):
         ''' same as max_gp_std with additional feasibility 
             constraints from classifier
         '''
@@ -63,7 +61,7 @@ class AdaptiveSampler:
         centroids, sizes = self._get_delaunay_centroids_and_sizes(x)
         return self._delaulay_triangle_milp(centroids, sizes)
 
-    def max_constrained_triangle(self, x):
+    # def max_constrained_triangle(self, x):
         ''' same as max_triangle with additional 
             feasibility constraints from classifier
         '''
@@ -86,7 +84,7 @@ class AdaptiveSampler:
             m.c.add( m.inputs[i] == m.feas.inputs[i] )
         return m
 
-    def modified_expected_improvement(self, y, sense,):
+    def modified_expected_improvement(self, model, y, sense):
         ''' maximise modified expected improvement of 
             Gaussian process regression model
             this method addresses the exploration/exploitation trade-off
@@ -118,7 +116,7 @@ class AdaptiveSampler:
         m.obj = pyo.Objective(expr=m.mod_ei, sense=pyo.maximize)
         return m
 
-    def constrained_modified_expected_improvement(self, y, sense):
+    # def constrained_modified_expected_improvement(self, y, sense):
         ''' same as modified_expected_improvement with 
             additional feasibility constraints from classifier
         '''
@@ -157,7 +155,7 @@ class AdaptiveSampler:
             exploit_sizes[i] = sizes[i]
         return self._delaulay_triangle_milp(centroids, exploit_sizes)
 
-    def exploit_constrained_triangle(self, x, y, sense):
+    # def exploit_constrained_triangle(self, x, y, sense):
         ''' same as exploit_triangle with additional 
             feasibility constraints from classifier
         '''
@@ -179,10 +177,6 @@ class AdaptiveSampler:
         for i in m.n_inputs:
             m.c.add( m.inputs[i] == m.feas.inputs[i] )
         return m
-
-    def _feasibility_constraints(self, m):
-        # TODO
-        pass
 
     def _get_delaunay_centroids_and_sizes(self, x):
         self.delaunay = Delaunay(x)
