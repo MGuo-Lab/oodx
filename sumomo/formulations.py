@@ -10,7 +10,7 @@ class SumoBlock:
 
     def get_formulation(self, return_std=False):
         
-        if self.model.name == 'NN':
+        if self.model.name == 'NN' or self.model.name == 'NNClf':
             if self.model.activation == 'relu':
                 self.formulation = pyo.Block(rule=self._nn_relu_rule)
             if self.model.activation == 'tanh':
