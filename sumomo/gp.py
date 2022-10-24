@@ -1,8 +1,10 @@
+from turtle import st
 import numpy as np
 from numpy.linalg import inv, slogdet
 from scipy.optimize import minimize
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.gaussian_process.kernels import RBF
+import time
 
 
 class GPR(GaussianProcessRegressor):
@@ -22,8 +24,11 @@ class GPR(GaussianProcessRegressor):
     def fit(self, x, y):
         self.x_train = x
         with np.errstate(divide='ignore'):
+            start_time = time.time()
             super().fit(x, y)
+            end_time = time.time()
         self._save_params()
+        print('{} model fitted! Time elapsed {:.5f} s'.format(self.name, end_time - start_time))
     
     def _save_params(self):
         params = self.kernel_.get_params()
@@ -138,12 +143,14 @@ class GPC:
         return a
     
     def _calculate_params(self):
+        start_time = time.time()
         params = minimize(
             fun=self._opt_fun, 
             x0=[1.0, 1.0], 
             bounds=[(1e-6, None), (1e-6, None)], 
             method='L-BFGS-B', 
             options={'iprint': -1})
+        end_time = time.time()
         self.l = params.x[0]
         self.sigma_f = params.x[1]
         a = self._posterior_mode()
@@ -154,6 +161,7 @@ class GPC:
         P = inv(W) + K
         self.inv_P = inv(P)
         self.delta = self.t_train - self._sigmoid(a)
+        print('{} model fitted! Time elapsed {:.5f} s'.format(self.name, end_time - start_time))
     
     def _opt_fun(self, theta):
         I = np.eye(self.x_train.shape[0])

@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+import time
 
 
 class NN(nn.Sequential):
@@ -20,6 +21,7 @@ class NN(nn.Sequential):
         x_train, y_train = torch.Tensor(x), torch.Tensor(y)
         optimiser = torch.optim.Adam(self.parameters(), lr=learning_rate)
         self.train()
+        start_time = time.time()
         for epoch in range(epochs):
             permutation = torch.randperm(len(x_train))
             for i in range(0, len(x_train), batch_size):
@@ -30,7 +32,9 @@ class NN(nn.Sequential):
                 optimiser.zero_grad()
                 loss.backward()
                 optimiser.step()
+        end_time = time.time()
         self._get_params()
+        print('{} model fitted! Time elapsed {:.5f} s'.format(self.name, end_time - start_time))
     
     def predict(self, x, return_proba=False, return_class=False, threshold=0.5):
         x = torch.Tensor(x)
