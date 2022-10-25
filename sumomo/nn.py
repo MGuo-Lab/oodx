@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch import nn
 import time
@@ -51,6 +52,22 @@ class NN(nn.Sequential):
             return y.numpy(), proba.numpy()
         else:
             return y.numpy()
+        
+    def formulation(self, x):
+        w = self.weights
+        b = self.biases
+        af = self._af_selector()
+        n = {i: set(range(w[i].shape[1])) for i in range(len(w))}
+        a = {key: lambda x: af(x) for key in range(len(w) - 1)}
+        a[len(a)] = lambda x: x
+
+        def f(i):
+            if i == -1:
+                return x
+            return a[i](sum(torch.from_numpy(w[i])[:, j] * f(i-1)[j] for j in n[i]) + torch.from_numpy(b[i]))
+        
+        outputs = f(len(self.weights) - 1)
+        return outputs.numpy()
     
     def _get_params(self):
         for layer in self:
@@ -58,6 +75,36 @@ class NN(nn.Sequential):
                 self.weights.append(layer.weight.data.numpy())
                 self.biases.append(layer.bias.data.numpy())
     
+    def _af_selector(self):
+        if self.activation == 'tanh':
+            def f(x):
+                return 1 - 2 / (np.exp( 2 * x ) + 1)
+        
+        elif self.activation == 'sigmoid':
+            def f(x):
+                return 1 / (1 + np.exp( -x ))
+        elif self.activation == 'softplus':
+            def f(x):
+                return np.log(1 + np.exp(x))
+
+        elif self.activation == 'relu':
+            def f(x):
+                return np.maximum(0, x)
+
+        elif self.activation == 'hardsigmoid':
+            def f(x):
+                y = np.zeros_like(x)
+                for i in range(len(y)):
+                    if x[i] >= 3:
+                        y[i] = 1
+                    elif x[i] <= -3:
+                        y[i] = 0
+                    else:
+                        y[i] = x[i] / 6 + 0.5
+                return y
+        
+        return f
+
     def _activation_selector(self):
         if self.activation == 'tanh':
             return nn.Tanh()
@@ -77,4 +124,3 @@ class NN(nn.Sequential):
             torch_layers.append( self._activation_selector() )
         torch_layers.append( nn.Linear(layers[-2], layers[-1]) )
         return torch_layers
-    
