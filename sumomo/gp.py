@@ -1,4 +1,3 @@
-from turtle import st
 import numpy as np
 from numpy.linalg import inv, slogdet
 from scipy.optimize import minimize
