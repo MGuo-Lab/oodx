@@ -56,7 +56,7 @@ class GPR(GaussianProcessRegressor):
                 ) ** 2 for j in range(m))
             )
         # linear predictor of mean function
-        pred = sum(k[i] * self.alpha[i] for i in range(n))
+        pred = sum(k[i] * self.alpha[i] for i in range(n)).reshape(-1, 1)
         if return_std:
             # vector-matrix-vector product of k^T K^-1 k
             vMv = sum(
@@ -125,7 +125,7 @@ class GPC:
                 sq_exp[i_] * self.inv_P[i, i_] for i_ in range(n)) for i in range(n)))
         beta = np.sqrt(1 + 3.1416 / 8 * var)
         prediction = 1 / (1 + np.exp(- mu / beta))
-        return prediction
+        return prediction.reshape(-1, 1)
     
     def _posterior_mode(self, max_iter=10, tol=1e-9):
         K = self._kernel(self.x_train, self.x_train)
