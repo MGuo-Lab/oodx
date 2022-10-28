@@ -20,14 +20,15 @@ class GPR(GaussianProcessRegressor):
         kernel = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0, 1e2))
         return kernel
 
-    def fit(self, x, y):
+    def fit(self, x, y, print=False):
         self.x_train = x
         with np.errstate(divide='ignore'):
             start_time = time.time()
             super().fit(x, y)
             end_time = time.time()
         self._save_params()
-        print('{} model fitted! Time elapsed {:.5f} s'.format(self.name, end_time - start_time))
+        if print:
+            print('{} model fitted! Time elapsed {:.5f} s'.format(self.name, end_time - start_time))
     
     def _save_params(self):
         params = self.kernel_.get_params()
@@ -88,10 +89,10 @@ class GPC:
         sq_exp = self.sigma_f ** 2 * np.exp( - 0.5 / self.l ** 2 * sq_dist )
         return sq_exp
 
-    def fit(self, x, t):
+    def fit(self, x, t, print=False):
         self.x_train = x
         self.t_train = t
-        self._calculate_params()
+        self._calculate_params(print=print)
 
     def predict(self, x, return_std=False, return_class=False, threshold=0.5):
         a = self._posterior_mode()
@@ -141,7 +142,7 @@ class GPC:
                 break
         return a
     
-    def _calculate_params(self):
+    def _calculate_params(self, print):
         start_time = time.time()
         params = minimize(
             fun=self._opt_fun, 
@@ -160,7 +161,8 @@ class GPC:
         P = inv(W) + K
         self.inv_P = inv(P)
         self.delta = self.t_train - self._sigmoid(a)
-        print('{} model fitted! Time elapsed {:.5f} s'.format(self.name, end_time - start_time))
+        if print:
+            print('{} model fitted! Time elapsed {:.5f} s'.format(self.name, end_time - start_time))
     
     def _opt_fun(self, theta):
         I = np.eye(self.x_train.shape[0])
