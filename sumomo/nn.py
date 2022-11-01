@@ -16,7 +16,7 @@ class NN(nn.Sequential):
         self.biases = []
         super().__init__(*self._build_layers(layers))
     
-    def fit(self, x, y, batch_size=10, epochs=1000, learning_rate=1e-2, loss_func=nn.MSELoss(), print=False):
+    def fit(self, x, y, batch_size=10, epochs=1000, learning_rate=1e-2, loss_func=nn.MSELoss(), iprint=False):
         if self.name == 'NNClf':
             loss_func = nn.BCEWithLogitsLoss()
         x_train, y_train = torch.Tensor(x), torch.Tensor(y)
@@ -35,7 +35,7 @@ class NN(nn.Sequential):
                 optimiser.step()
         end_time = time.time()
         self._get_params()
-        if print:
+        if iprint:
             print('{} model fitted! Time elapsed {:.5f} s'.format(self.name, end_time - start_time))
     
     def predict(self, x, return_proba=False, return_class=False, threshold=0.5):
