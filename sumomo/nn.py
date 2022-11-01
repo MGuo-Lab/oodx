@@ -55,20 +55,26 @@ class NN(nn.Sequential):
             return y.numpy()
         
     def formulation(self, x):
-        w = self.weights
-        b = self.biases
-        af = self._af_selector()
-        n = {i: set(range(w[i].shape[1])) for i in range(len(w))}
-        a = {key: lambda x: af(x) for key in range(len(w) - 1)}
-        a[len(a)] = lambda x: x
+        output = np.zeros((x.shape[0], 1))
 
-        def f(i):
-            if i == -1:
-                return x
-            return a[i](sum(torch.from_numpy(w[i])[:, j] * f(i-1)[j] for j in n[i]) + torch.from_numpy(b[i]))
-        
-        outputs = f(len(self.weights) - 1)
-        return outputs.numpy()
+        for ind, x_val in enumerate(x):
+
+            w = self.weights
+            b = self.biases
+            af = self._af_selector()
+            n = {i: set(range(w[i].shape[1])) for i in range(len(w))}
+            a = {key: lambda x: af(x) for key in range(len(w) - 1)}
+            a[len(a)] = lambda x: x
+
+            def f(i):
+                if i == -1:
+                    return x_val
+                return a[i](sum(torch.from_numpy(w[i])[:, j] * f(i-1)[j] for j in n[i]) + torch.from_numpy(b[i]))
+
+            output_val = f(len(self.weights) - 1)
+            output[ind] = output_val.numpy()
+
+        return output
     
     def _get_params(self):
         for layer in self:
