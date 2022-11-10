@@ -72,7 +72,8 @@ class DataHandler:
             self.x = np.array(sobol_samples)
         
         elif method == 'grid':
-            n = int(np.sqrt(n_samples))
+            m = len(space)
+            n = int(n_samples ** (1/m))
             x1, x2 = np.linspace(*self.space[0], n), np.linspace(*self.space[1], n)
             x1_grid, x2_grid = np.meshgrid(x1, x2)
             grid = np.c_[x1_grid.ravel(), x2_grid.ravel()]
@@ -103,6 +104,13 @@ class DataHandler:
             self.x_train_mean, self.x_train_std = scaler.mean_, scaler.scale_
             # normalise x_test using training moments
             self.x_test_ = (self.x_test - self.x_train_mean) / self.x_train_std
+            # normalise y_train only on converged data
+            y_train_con = self.y_train[self.t_train.ravel() == 1, :]
+            scaler.fit(y_train_con)
+            self.y_train_mean, self.y_train_std = scaler.mean_, scaler.scale_
+            self.y_train_ = (self.y_train - self.y_train_mean) / self.y_train_std
+            # normalise y_test using training moments
+            self.y_test_ = (self.y_test - self.y_train_mean) / self.y_train_std
             # normalise space using training moments
             self.space_ = [] 
             for i, val in enumerate(self.space):
@@ -116,17 +124,8 @@ class DataHandler:
                 lb = (val[0] - self.x_mean[i]) / self.x_std[i]
                 ub = (val[1] - self.x_mean[i]) / self.x_std[i]
                 self.space_.append( (lb, ub) )
-        
-        if self.y_train is not None:
-            # normalise y_train only on converged data
-            y_train_con = self.y_train[self.t_train.ravel() == 1, :]
-            scaler.fit(y_train_con)
-            self.y_train_mean, self.y_train_std = scaler.mean_, scaler.scale_
-            self.y_train_ = (self.y_train - self.y_train_mean) / self.y_train_std
-            # normalise y_test using training moments
-            self.y_test_ = (self.y_test - self.y_train_mean) / self.y_train_std
+            
     
-
     def inv_scale_x(self, x):
         output = np.zeros_like(x)
         for i in range(x.shape[0]):
