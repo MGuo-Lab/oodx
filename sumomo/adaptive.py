@@ -93,10 +93,10 @@ class AdaptiveSampler:
             y_opt = np.max(y)
         else:
             y_opt = np.min(y)
-        constant_value = self.model.constant_value
+        constant_value = model.constant_value
         m = pyo.ConcreteModel()
    
-        block = SumoBlock(self.model)
+        block = SumoBlock(model)
         m.mdl = block.get_formulation()
         m.mdl_std = block.get_formulation(return_std=True)
 
