@@ -126,6 +126,20 @@ class DataHandler:
                 self.space_.append( (lb, ub) )
             
     
+    def scale_space(self, space):
+        # normalise space using x moments
+        new_space = []
+        for i, val in enumerate(space):
+            if self.x_train is not None:
+                lb = (val[0] - self.x_train_mean[i]) / self.x_train_std[i]
+                ub = (val[1] - self.x_train_mean[i]) / self.x_train_std[i]
+            else:
+                lb = (val[0] - self.x_mean[i]) / self.x_std[i]
+                ub = (val[1] - self.x_mean[i]) / self.x_std[i]
+            new_space.append( [lb, ub] )
+        return new_space
+
+
     def inv_scale_x(self, x):
         output = np.zeros_like(x)
         for i in range(x.shape[0]):
