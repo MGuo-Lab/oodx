@@ -1,9 +1,9 @@
-import re
 import numpy as np
 from numpy.linalg import det
 from scipy.spatial import Delaunay
 import pyomo.environ as pyo
 import math
+import itertools
 
 from .formulations import SumoBlock
 
@@ -54,11 +54,11 @@ class AdaptiveSampler:
             m.c.add( m.inputs[i] == m.feas.inputs[i] )
         return m
     
-    def max_triangle(self, x):
+    def max_triangle(self, x, include_vertices=0):
         ''' choose maximum sized region from Delaunay triangulation
             this is an exploration only adaptive sampling method
         '''
-        centroids, sizes = self._get_delaunay_centroids_and_sizes(x)
+        centroids, sizes = self._get_delaunay_centroids_and_sizes(x, include_vertices)
         return self._delaulay_triangle_milp(centroids, sizes)
 
     # def max_constrained_triangle(self, x):
@@ -139,12 +139,12 @@ class AdaptiveSampler:
             m.c.add( m.inputs[i] == m.feas.inputs[i] )
         return m
 
-    def exploit_triangle(self, x, y, sense):
+    def exploit_triangle(self, x, y, sense, include_vertices=0):
         ''' chooses maximum sized region from Delauanay 
             triangulation connected to min/max sample
             this is an exploitation only adaptive sampling method
         '''
-        centroids, sizes = self._get_delaunay_centroids_and_sizes(x)
+        centroids, sizes = self._get_delaunay_centroids_and_sizes(x, include_vertices)
         if sense == 'max':
             index = list(y).index(max(list(y)))
         elif sense == 'min':
@@ -178,7 +178,17 @@ class AdaptiveSampler:
             m.c.add( m.inputs[i] == m.feas.inputs[i] )
         return m
 
-    def _get_delaunay_centroids_and_sizes(self, x):
+    def _get_delaunay_centroids_and_sizes(self, x, include_vertices=0):
+        for i, bounds in enumerate(self.space):
+            x = x[x[:, i] >= bounds[0]]
+            x = x[x[:, i] <= bounds[1]]
+        
+        if include_vertices:
+            vertices = np.array(list(itertools.product(*self.space)))
+            print(vertices)
+
+        print(x)
+        
         self.delaunay = Delaunay(x)
         
         centroids = np.zeros((self.delaunay.simplices.shape[0], x.shape[1]))
