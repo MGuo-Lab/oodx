@@ -58,7 +58,18 @@ class AdaptiveSampler:
         ''' choose maximum sized region from Delaunay triangulation
             this is an exploration only adaptive sampling method
         '''
-        centroids, sizes = self._get_delaunay_centroids_and_sizes(x, include_vertices)
+        #  triangulate points within search space
+        mat = np.zeros_like(x)
+        for i, bounds in enumerate(self.space):
+            mat[:, i] = 1 * np.logical_and(x[:, i] >= bounds[0], x[:, i] <= bounds[1])
+        ind = np.sum(mat, axis=1) == x.shape[1]
+        x = x[ind]
+        
+        if include_vertices:
+            vertices = np.array(list(itertools.product(*self.space)))
+            x = np.r_[x, vertices]
+
+        centroids, sizes = self._get_delaunay_centroids_and_sizes(x)
         return self._delaulay_triangle_milp(centroids, sizes)
 
     # def max_constrained_triangle(self, x):
@@ -144,7 +155,19 @@ class AdaptiveSampler:
             triangulation connected to min/max sample
             this is an exploitation only adaptive sampling method
         '''
-        centroids, sizes = self._get_delaunay_centroids_and_sizes(x, include_vertices)
+        #  triangulate points within search space
+        mat = np.zeros_like(x)
+        for i, bounds in enumerate(self.space):
+            mat[:, i] = 1 * np.logical_and(x[:, i] >= bounds[0], x[:, i] <= bounds[1])
+        ind = np.sum(mat, axis=1) == x.shape[1]
+        x = x[ind]
+        y = y[ind]
+        
+        if include_vertices:
+            vertices = np.array(list(itertools.product(*self.space)))
+            x = np.r_[x, vertices]
+
+        centroids, sizes = self._get_delaunay_centroids_and_sizes(x)
         if sense == 'max':
             index = list(y).index(max(list(y)))
         elif sense == 'min':
@@ -178,17 +201,8 @@ class AdaptiveSampler:
             m.c.add( m.inputs[i] == m.feas.inputs[i] )
         return m
 
-    def _get_delaunay_centroids_and_sizes(self, x, include_vertices=0):
-        for i, bounds in enumerate(self.space):
-            x = x[x[:, i] >= bounds[0]]
-            x = x[x[:, i] <= bounds[1]]
-        
-        if include_vertices:
-            vertices = np.array(list(itertools.product(*self.space)))
-            print(vertices)
+    def _get_delaunay_centroids_and_sizes(self, x):
 
-        print(x)
-        
         self.delaunay = Delaunay(x)
         
         centroids = np.zeros((self.delaunay.simplices.shape[0], x.shape[1]))
