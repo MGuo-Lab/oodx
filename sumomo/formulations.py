@@ -157,6 +157,31 @@ class SumoBlock:
             m.c.add( m.outputs[n] == m.z[(len(self.model.layers) - 1, n)] )
 
 
+    def _nn_linear_rule(self, m):
+        # retrieve general nn model
+        m.nn = pyo.Block(rule=self._nn_general)
+    
+        # declare variables
+        m.inputs = pyo.Var(m.nn.nodes[0])
+        m.outputs = pyo.Var(m.nn.nodes[len(self.model.layers) - 1])
+
+        # constraints
+        m.c = pyo.ConstraintList()
+      
+        # activated layers return tanh of linear outputs
+        for l in m.nn.layers[1:]:
+            for n in m.nn.nodes[l]:
+                m.c.add( m.nn.a[(l, n)] == m.nn.z[(l, n)] )
+        
+        # connect inputs to general model
+        for i in m.nn.nodes[0]:
+            m.c.add( m.inputs[i] == m.nn.inputs[i] )
+        
+        # connect outputs to general model
+        for i in m.nn.nodes[len(self.model.layers) - 1]:
+            m.c.add( m.outputs[i] == m.nn.outputs[i] )
+
+
     def _nn_tanh_rule(self, m):
         # retrieve general nn model
         m.nn = pyo.Block(rule=self._nn_general)
