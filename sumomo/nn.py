@@ -123,6 +123,8 @@ class NN(nn.Sequential):
             return nn.ReLU()
         elif self.activation == 'hardsigmoid':
             return nn.Hardsigmoid()
+        elif self.activation == 'linear':
+            return nn.Identity()
 
     def _build_layers(self, layers):
         torch_layers = []
