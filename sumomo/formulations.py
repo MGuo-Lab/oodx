@@ -21,6 +21,8 @@ class SumoBlock:
                 self.formulation = pyo.Block(rule=self._nn_sigmoid_rule)
             if self.model.activation == 'hardsigmoid':
                 self.formulation = pyo.Block(rule=self._nn_hardsigmoid_rule)
+            if self.model.activation == 'linear':
+                self.formulation = pyo.Block(rule=self._nn_linear_rule)
         
         if self.model.name == 'GPR':
             if return_std:
