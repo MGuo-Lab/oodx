@@ -97,7 +97,6 @@ class GPR(GaussianProcessRegressor):
                     self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * x[:, j].reshape(-1, 1) for j in range(m))
                 ) ** 2
             var = np.diag(k_ss) - vMv #+ self.noise
-            print(var)
             std = np.sqrt(var)
             return pred, std
         else:
