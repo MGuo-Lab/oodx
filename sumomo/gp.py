@@ -2,7 +2,7 @@ import numpy as np
 from numpy.linalg import inv, slogdet
 from scipy.optimize import minimize
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF
+from sklearn.gaussian_process.kernels import RBF, DotProduct
 import time
 
 
@@ -18,6 +18,8 @@ class GPR(GaussianProcessRegressor):
     
     def _kernel(self):
         kernel = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0, 1e2))
+
+        kernel = 1.0 * DotProduct(sigma_0=1.0, sigma_0_bounds=(0.1, 10.0)) ** 2
         return kernel
 
     def fit(self, x, y, iprint=False):
