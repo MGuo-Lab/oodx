@@ -97,6 +97,10 @@ class NN(nn.Sequential):
         elif self.activation == 'relu':
             def f(x):
                 return np.maximum(0, x)
+        
+        if self.activation == 'linear':
+            def f(x):
+                return x
 
         elif self.activation == 'hardsigmoid':
             def f(x):
