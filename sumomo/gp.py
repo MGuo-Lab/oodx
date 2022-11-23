@@ -19,7 +19,7 @@ class GPR(GaussianProcessRegressor):
     def _kernel(self):
         kernel = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0, 1e2))
 
-        kernel = 1.0 * DotProduct(sigma_0=1.0, sigma_0_bounds=(0.1, 10.0))
+        kernel = 1.0 * DotProduct(sigma_0=1.0, sigma_0_bounds=(1e-5, 1e5))
         return kernel
 
     def fit(self, x, y, iprint=False):
@@ -28,17 +28,18 @@ class GPR(GaussianProcessRegressor):
             start_time = time.time()
             super().fit(x, y)
             end_time = time.time()
-        # self._save_params()
+        self._save_params()
         if iprint:
             print('{} model fitted! Time elapsed {:.5f} s'.format(self.name, end_time - start_time))
     
     def _save_params(self):
         params = self.kernel_.get_params()
-        self.constant_value = params['k1__constant_value']
-        self.length_scale = params['k2__length_scale']
-        self.alpha = self.alpha_.ravel()
-        K = self.kernel_(self.x_train, self.x_train) + np.eye(self.x_train.shape[0]) * self.noise
-        self.inv_K = inv(K)
+        print(params)
+        # self.constant_value = params['k1__constant_value']
+        # self.length_scale = params['k2__length_scale']
+        # self.alpha = self.alpha_.ravel()
+        # K = self.kernel_(self.x_train, self.x_train) + np.eye(self.x_train.shape[0]) * self.noise
+        # self.inv_K = inv(K)
     
     def predict(self, x, return_std=False, return_cov=False):
         if return_std:
