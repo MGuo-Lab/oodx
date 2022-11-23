@@ -98,7 +98,7 @@ class NN(nn.Sequential):
             def f(x):
                 return np.maximum(0, x)
         
-        if self.activation == 'linear':
+        elif self.activation == 'linear':
             def f(x):
                 return x
 
