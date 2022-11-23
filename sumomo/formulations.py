@@ -25,10 +25,23 @@ class SumoBlock:
                 self.formulation = pyo.Block(rule=self._nn_linear_rule)
         
         if self.model.name == 'GPR':
-            if return_std:
-                self.formulation = pyo.Block(rule=self._gpr_std_rule)
-            else:
-                self.formulation = pyo.Block(rule=self._gpr_rule)
+            if self.model.kernel_name == 'rbf':
+                if return_std:
+                    self.formulation = pyo.Block(rule=self._gpr_rbf_std_rule)
+                else:
+                    self.formulation = pyo.Block(rule=self._gpr_rbf_rule)
+            
+            if self.model.kernel_name == 'linear':
+                if return_std:
+                    self.formulation = pyo.Block(rule=self._gpr_linear_std_rule)
+                else:
+                    self.formulation = pyo.Block(rule=self._gpr_linear_rule)
+            
+            if self.model.kernel_name == 'quadratic':
+                if return_std:
+                    self.formulation = pyo.Block(rule=self._gpr_quadratic_std_rule)
+                else:
+                    self.formulation = pyo.Block(rule=self._gpr_quadratic_rule)
         
         if self.model.name == 'GPC':
             self.formulation = pyo.Block(rule=self._gpc_rule)
@@ -36,7 +49,7 @@ class SumoBlock:
         return self.formulation
 
 
-    def _gpr_rule(self, m):
+    def _gpr_rbf_rule(self, m):
         # declare parameters
         x_train = self.model.x_train
         length_scale = self.model.length_scale
@@ -62,7 +75,57 @@ class SumoBlock:
         )
     
 
-    def _gpr_std_rule(self, m):
+    def _gpr_linear_rule(self, m):
+        # declare parameters
+        x_train = self.model.x_train
+        sigma_0 = self.model.sigma_0
+        constant_value = self.model.constant_value
+        alpha = self.model.alpha
+
+        # declare sets
+        n_samples = set(range(x_train.shape[0]))
+        n_inputs = set(range(x_train.shape[1]))
+        n_outputs = set(range(1))
+        
+        # declare variables
+        m.inputs = pyo.Var(n_inputs)
+        m.outputs = pyo.Var(n_outputs)
+
+        # gpr constraint        
+        m.gpr = pyo.Constraint(expr=
+            m.outputs[0] == 
+            sum(alpha[i] * constant_value * (
+                sigma_0 ** 2 + sum(m.inputs[j] * x_train[i, j] for j in range(m))
+            ) for i in n_samples)
+        )
+    
+
+    def _gpr_quadratic_rule(self, m):
+        # declare parameters
+        x_train = self.model.x_train
+        sigma_0 = self.model.sigma_0
+        constant_value = self.model.constant_value
+        alpha = self.model.alpha
+
+        # declare sets
+        n_samples = set(range(x_train.shape[0]))
+        n_inputs = set(range(x_train.shape[1]))
+        n_outputs = set(range(1))
+        
+        # declare variables
+        m.inputs = pyo.Var(n_inputs)
+        m.outputs = pyo.Var(n_outputs)
+
+        # gpr constraint        
+        m.gpr = pyo.Constraint(expr=
+            m.outputs[0] == 
+            sum(alpha[i] * constant_value * (
+                sigma_0 ** 2 + sum(m.inputs[j] * x_train[i, j] for j in range(m))
+            ) ** 2 for i in n_samples)
+        )
+    
+
+    def _gpr_rbf_std_rule(self, m):
         # declare parameters
         x_train = self.model.x_train
         length_scale = self.model.length_scale
@@ -92,6 +155,58 @@ class SumoBlock:
                         ) ** 2 for j in n_inputs
                     )) for k in n_samples
                 ) for i in n_samples
+            )
+        )
+    
+
+    def _gpr_linear_std_rule(self, m):
+        # declare parameters
+        x_train = self.model.x_train
+        sigma_0 = self.model.sigma_0
+        constant_value = self.model.constant_value
+        inv_K = self.model.inv_K
+
+        # declare sets
+        n_samples = set(range(x_train.shape[0]))
+        n_inputs = set(range(x_train.shape[1]))
+        n_outputs = set(range(1))
+        
+        # declare variables
+        m.inputs = pyo.Var(n_inputs)
+        m.outputs = pyo.Var(n_outputs)
+
+        # gpr constraint representing -k^T K^-1 k in the std calc
+        m.gpr_std = pyo.Constraint(expr=
+            m.outputs[0] == - sum(
+                constant_value * (sigma_0 ** 2 + sum(m.inputs[j] * x_train[i, j] for j in range(m))) 
+                * sum(inv_K[i, k] * constant_value * (sigma_0 ** 2 + sum(m.inputs[j] * x_train[k, j] for j in range(m))) 
+                for k in n_samples) for i in n_samples
+            )
+        )
+
+
+    def _gpr_quadratic_std_rule(self, m):
+        # declare parameters
+        x_train = self.model.x_train
+        sigma_0 = self.model.sigma_0
+        constant_value = self.model.constant_value
+        inv_K = self.model.inv_K
+
+        # declare sets
+        n_samples = set(range(x_train.shape[0]))
+        n_inputs = set(range(x_train.shape[1]))
+        n_outputs = set(range(1))
+        
+        # declare variables
+        m.inputs = pyo.Var(n_inputs)
+        m.outputs = pyo.Var(n_outputs)
+
+        # gpr constraint representing -k^T K^-1 k in the std calc
+        m.gpr_std = pyo.Constraint(expr=
+            m.outputs[0] == - sum(
+                constant_value * (sigma_0 ** 2 + sum(m.inputs[j] * x_train[i, j] for j in range(m))) ** 2 
+                * sum(inv_K[i, k] * constant_value * (sigma_0 ** 2 + sum(m.inputs[j] * x_train[k, j] for j in range(m))) ** 2
+                for k in n_samples) for i in n_samples
             )
         )
 
