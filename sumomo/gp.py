@@ -87,6 +87,7 @@ class GPR(GaussianProcessRegressor):
                 )
             # variance and std at new input
             var = self.constant_value - vMv #+ self.noise
+            print(var)
             std = np.sqrt(var)
             return pred, std
         else:
