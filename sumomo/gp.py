@@ -28,7 +28,7 @@ class GPR(GaussianProcessRegressor):
             start_time = time.time()
             super().fit(x, y)
             end_time = time.time()
-        self._save_params()
+        # self._save_params()
         if iprint:
             print('{} model fitted! Time elapsed {:.5f} s'.format(self.name, end_time - start_time))
     
