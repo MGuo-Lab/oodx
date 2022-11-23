@@ -39,7 +39,6 @@ class GPR(GaussianProcessRegressor):
     
     def _save_params(self):
         params = self.kernel_.get_params()
-        print(params)
         self.constant_value = params['k1__constant_value']
         if self.kernel_name == 'rbf':
             self.length_scale = params['k2__length_scale']
