@@ -87,7 +87,7 @@ class GPR(GaussianProcessRegressor):
                 )
             # variance and std at new input
             if self.kernel_name == 'rbf':
-                k_ss = np.array(self.constant_value)
+                k_ss = np.array(self.constant_value).reshape(1, 1)
             elif self.kernel_name == 'linear':
                 k_ss = self.constant_value * (
                     self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * x[:, j].reshape(-1, 1) for j in range(m))
