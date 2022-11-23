@@ -71,7 +71,7 @@ class GPR(GaussianProcessRegressor):
         if self.kernel_name == 'linear':
             k = self.constant_value * (
                 self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * self.x_train[:, j].reshape(-1, 1) for j in range(m))
-            ) 
+            )
         if self.kernel_name == 'quadratic':
             k = self.constant_value * (
                 self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * self.x_train[:, j].reshape(-1, 1) for j in range(m))
@@ -86,7 +86,17 @@ class GPR(GaussianProcessRegressor):
                     ) for i in range(n)
                 )
             # variance and std at new input
-            var = self.constant_value - vMv #+ self.noise
+            if self.kernel_name == 'rbf':
+                k_ss = self.constant_value
+            elif self.kernel_name == 'linear':
+                k_ss = self.constant_value * (
+                    self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * x[:, j].reshape(-1, 1) for j in range(m))
+                )
+            elif self.kernel_name == 'quadratic':
+                k_ss = self.constant_value * (
+                    self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * x[:, j].reshape(-1, 1) for j in range(m))
+                ) ** 2
+            var = k_ss - vMv #+ self.noise
             print(var)
             std = np.sqrt(var)
             return pred, std
