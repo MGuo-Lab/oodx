@@ -39,11 +39,11 @@ class GPR(GaussianProcessRegressor):
     def _save_params(self):
         params = self.kernel_.get_params()
         print(params)
-        # self.constant_value = params['k1__constant_value']
+        self.constant_value = params['k1__constant_value']
         # self.length_scale = params['k2__length_scale']
-        # self.alpha = self.alpha_.ravel()
-        # K = self.kernel_(self.x_train, self.x_train) + np.eye(self.x_train.shape[0]) * self.noise
-        # self.inv_K = inv(K)
+        self.alpha = self.alpha_.ravel()
+        K = self.kernel_(self.x_train, self.x_train) + np.eye(self.x_train.shape[0]) * self.noise
+        self.inv_K = inv(K)
     
     def predict(self, x, return_std=False, return_cov=False):
         if return_std:
