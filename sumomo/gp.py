@@ -19,7 +19,7 @@ class GPR(GaussianProcessRegressor):
     def _kernel(self):
         kernel = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0, 1e2))
 
-        kernel = 1.0 * DotProduct(sigma_0=1.0, sigma_0_bounds=(1e-5, 1e5)) ** 3
+        kernel = 1.0 * DotProduct(sigma_0=1.0, sigma_0_bounds=(0.1, 1e5)) ** 2.0
         return kernel
 
     def fit(self, x, y, iprint=False):
