@@ -81,7 +81,6 @@ class DataHandler:
             samples = np.array(grid)
             np.random.shuffle(samples)
             self.x = samples[:n_samples]
-            print(self.x)
     
 
     def split(self, test_size=0.3):
