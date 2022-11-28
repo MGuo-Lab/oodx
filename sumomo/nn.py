@@ -16,11 +16,21 @@ class NN(nn.Sequential):
         self.biases = []
         super().__init__(*self._build_layers(layers))
     
-    def fit(self, x, y, batch_size=10, epochs=1000, learning_rate=1e-2, loss_func=nn.MSELoss(), iprint=False):
+    def fit(
+        self, 
+        x, 
+        y, 
+        batch_size=10, 
+        epochs=1000, 
+        learning_rate=1e-2, 
+        weight_decay=0.0,
+        loss_func=nn.MSELoss(), 
+        iprint=False
+    ):
         if self.name == 'NNClf':
             loss_func = nn.BCEWithLogitsLoss()
         x_train, y_train = torch.Tensor(x), torch.Tensor(y)
-        optimiser = torch.optim.Adam(self.parameters(), lr=learning_rate)
+        optimiser = torch.optim.Adam(self.parameters(), lr=learning_rate, weight_decay=weight_decay)
         self.train()
         start_time = time.time()
         for epoch in range(epochs):
