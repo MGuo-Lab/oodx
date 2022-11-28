@@ -7,7 +7,7 @@ import time
 
 
 class GPR(GaussianProcessRegressor):
-    def __init__(self, kernel='rbf', noise=0.0):
+    def __init__(self, kernel='rbf', noise=1e-10):
         super().__init__(kernel=self._kernel(kernel), alpha=noise)
         self.name = 'GPR'
         self.kernel_name = kernel
