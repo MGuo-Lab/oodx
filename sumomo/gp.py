@@ -8,7 +8,7 @@ import time
 
 class GPR(GaussianProcessRegressor):
     def __init__(self, kernel='rbf', noise=1e-10, porder=1):
-        super().__init__(kernel=self._kernel(kernel, porder), alpha=noise)
+        self.porder = porder
         self.name = 'GPR'
         self.kernel_name = kernel
         self.noise = noise
@@ -17,8 +17,9 @@ class GPR(GaussianProcessRegressor):
         self.constant_value = None
         self.sigma_0 = None
         self.inv_K = None
+        super().__init__(kernel=self._kernel(kernel), alpha=noise)
     
-    def _kernel(self, kernel, porder):
+    def _kernel(self, kernel):
         if kernel == 'rbf':        
             kernel = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0, 1e2))
         elif kernel == 'linear':
@@ -26,7 +27,7 @@ class GPR(GaussianProcessRegressor):
         elif kernel == 'quadratic':
             kernel = 1.0 * DotProduct(sigma_0=1.0, sigma_0_bounds=(0.1, 1e5)) ** 2
         elif kernel == 'polynomial':
-            kernel = 1.0 * DotProduct(sigma_0=1.0, sigma_0_bounds=(0.1, 1e5)) ** porder
+            kernel = 1.0 * DotProduct(sigma_0=1.0, sigma_0_bounds=(0.1, 1e5)) ** self.porder
         return kernel
 
     def fit(self, x, y, iprint=False):
@@ -41,6 +42,7 @@ class GPR(GaussianProcessRegressor):
     
     def _save_params(self):
         params = self.kernel_.get_params()
+        print(params)
         self.constant_value = params['k1__constant_value']
         if self.kernel_name == 'rbf':
             self.length_scale = params['k2__length_scale']
@@ -64,6 +66,7 @@ class GPR(GaussianProcessRegressor):
         n = self.x_train.shape[0]   # number of training samples
         m = self.x_train.shape[1]   # number of input dimensions
         # squared exponential kernel evaluated at training and new inputs
+        
         if self.kernel_name == 'rbf':
             k = self.constant_value * np.exp(
                 -sum(0.5 / self.length_scale ** 2 * (
@@ -78,6 +81,10 @@ class GPR(GaussianProcessRegressor):
             k = self.constant_value * (
                 self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * self.x_train[:, j].reshape(-1, 1) for j in range(m))
             ) ** 2
+        if self.kernel_name == 'polynomial':
+            k = self.constant_value * (
+                self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * self.x_train[:, j].reshape(-1, 1) for j in range(m))
+            ) ** self.porder
         # linear predictor of mean function
         pred = sum(k[i] * self.alpha[i] for i in range(n)).reshape(-1, 1)
         if return_std:
@@ -98,6 +105,10 @@ class GPR(GaussianProcessRegressor):
                 k_ss = self.constant_value * (
                     self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * x[:, j].reshape(-1, 1) for j in range(m))
                 ) ** 2
+            elif self.kernel_name == 'polynomial':
+                k_ss = self.constant_value * (
+                    self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * x[:, j].reshape(-1, 1) for j in range(m))
+                ) ** self.porder
             var = np.diag(k_ss) - vMv
             std = np.sqrt(var)
             return pred, std
