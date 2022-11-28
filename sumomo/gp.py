@@ -42,13 +42,14 @@ class GPR(GaussianProcessRegressor):
     
     def _save_params(self):
         params = self.kernel_.get_params()
-        print(params)
         self.constant_value = params['k1__constant_value']
         if self.kernel_name == 'rbf':
             self.length_scale = params['k2__length_scale']
         if self.kernel_name == 'linear':
             self.sigma_0 = params['k2__sigma_0']
         if self.kernel_name == 'quadratic':
+            self.sigma_0 = params['k2__kernel__sigma_0']
+        if self.kernel_name == 'polynomial':
             self.sigma_0 = params['k2__kernel__sigma_0']
         self.alpha = self.alpha_.ravel()
         K = self.kernel_(self.x_train, self.x_train) + np.eye(self.x_train.shape[0]) * self.noise
