@@ -7,7 +7,7 @@ import time
 
 
 class GPR(GaussianProcessRegressor):
-    def __init__(self, kernel='rbf', noise=1e-10):
+    def __init__(self, kernel='rbf', noise=1e-10, order=1):
         super().__init__(kernel=self._kernel(kernel), alpha=noise)
         self.name = 'GPR'
         self.kernel_name = kernel
@@ -17,6 +17,7 @@ class GPR(GaussianProcessRegressor):
         self.constant_value = None
         self.sigma_0 = None
         self.inv_K = None
+        self.order = order
     
     def _kernel(self, kernel):
         if kernel == 'rbf':        
@@ -25,6 +26,8 @@ class GPR(GaussianProcessRegressor):
             kernel = 1.0 * DotProduct(sigma_0=1.0, sigma_0_bounds=(0.1, 1e5))
         elif kernel == 'quadratic':
             kernel = 1.0 * DotProduct(sigma_0=1.0, sigma_0_bounds=(0.1, 1e5)) ** 2
+        elif kernel == 'polynomial':
+            kernel = 1.0 * DotProduct(sigma_0=1.0, sigma_0_bounds=(0.1, 1e5)) ** self.order
         return kernel
 
     def fit(self, x, y, iprint=False):
