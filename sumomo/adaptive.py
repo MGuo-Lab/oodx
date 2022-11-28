@@ -32,28 +32,7 @@ class AdaptiveSampler:
             m.c.add( m.inputs[i] == m.mdl.inputs[i] )
         return m
 
-    #def max_constrained_gp_std(self):
-        ''' same as max_gp_std with additional feasibility 
-            constraints from classifier
-        '''
-        m = self.max_gp_std()
-        
-        block = SumoBlock(self.classifier)
-        m.feas = block.get_formulation()
 
-        if self.classifier.name == 'NN':
-            m.feasibility_con = pyo.Constraint(
-                expr= 
-                1 / (1 + pyo.exp(-m.feas.outputs[0])) >= 0.5
-            )
-        else:
-            m.feasibility_con = pyo.Constraint(
-                expr= m.feas.outputs[0] >= 0.5
-            )
-        for i in m.n_inputs:
-            m.c.add( m.inputs[i] == m.feas.inputs[i] )
-        return m
-    
     def max_triangle(self, x, include_vertices=0):
         ''' choose maximum sized region from Delaunay triangulation
             this is an exploration only adaptive sampling method
@@ -72,28 +51,6 @@ class AdaptiveSampler:
         centroids, sizes = self._get_delaunay_centroids_and_sizes(x)
         return self._delaulay_triangle_milp(centroids, sizes)
 
-    # def max_constrained_triangle(self, x):
-        ''' same as max_triangle with additional 
-            feasibility constraints from classifier
-        '''
-        m = self.max_triangle(x)
-        
-        block = SumoBlock(self.classifier)
-        m.feas = block.get_formulation()
-
-        if self.classifier.name == 'NN':
-            m.feasibility_con = pyo.Constraint(
-                expr= 
-                1 / (1 + pyo.exp(-m.feas.outputs[0])) >= 0.5
-            )
-        else:
-            m.feasibility_con = pyo.Constraint(
-                expr= 
-                m.feas.outputs[0] >= 0.5 
-            )
-        for i in m.n_inputs:
-            m.c.add( m.inputs[i] == m.feas.inputs[i] )
-        return m
 
     def modified_expected_improvement(self, model, y, sense):
         ''' maximise modified expected improvement of 
@@ -127,28 +84,6 @@ class AdaptiveSampler:
         m.obj = pyo.Objective(expr=m.mod_ei, sense=pyo.maximize)
         return m
 
-    # def constrained_modified_expected_improvement(self, y, sense):
-        ''' same as modified_expected_improvement with 
-            additional feasibility constraints from classifier
-        '''
-        m = self.modified_expected_improvement(y, sense)
-
-        block = SumoBlock(self.classifier)
-        m.feas = block.get_formulation()
-        
-        if self.classifier.name == 'NN':
-            m.feasibility_con = pyo.Constraint(
-                expr= 
-                1 / (1 + pyo.exp(-m.feas.outputs[0])) >= 0.5
-            )
-        else:
-            m.feasibility_con = pyo.Constraint(
-                expr= 
-                m.feas.outputs[0] >= 0.5 
-            )
-        for i in m.n_inputs:
-            m.c.add( m.inputs[i] == m.feas.inputs[i] )
-        return m
 
     def exploit_triangle(self, x, y, sense, include_vertices=0):
         ''' chooses maximum sized region from Delauanay 
@@ -178,28 +113,6 @@ class AdaptiveSampler:
             exploit_sizes[i] = sizes[i]
         return self._delaulay_triangle_milp(centroids, exploit_sizes)
 
-    # def exploit_constrained_triangle(self, x, y, sense):
-        ''' same as exploit_triangle with additional 
-            feasibility constraints from classifier
-        '''
-        m = self.exploit_triangle(x, y, sense)
-
-        block = SumoBlock(self.classifier)
-        m.feas = block.get_formulation()
-
-        if self.classifier.name == 'NN':
-            m.feasibility_con = pyo.Constraint(
-                expr= 
-                1 / (1 + pyo.exp(-m.feas.outputs[0])) >= 0.5
-            )
-        else:
-            m.feasibility_con = pyo.Constraint(
-                expr= 
-                m.feas.outputs[0] >= 0.5 
-            )
-        for i in m.n_inputs:
-            m.c.add( m.inputs[i] == m.feas.inputs[i] )
-        return m
 
     def _get_delaunay_centroids_and_sizes(self, x):
 
@@ -216,6 +129,7 @@ class AdaptiveSampler:
             sizes[i] = abs(1 / math.factorial(x.shape[1]) * det(dist))
         
         return centroids, sizes
+    
     
     def _delaulay_triangle_milp(self, centroids, sizes):
         m = pyo.ConcreteModel()
