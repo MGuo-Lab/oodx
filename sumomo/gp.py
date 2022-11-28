@@ -7,7 +7,7 @@ import time
 
 
 class GPR(GaussianProcessRegressor):
-    def __init__(self, kernel='rbf', noise=1e-10, porder=1):
+    def __init__(self, kernel='rbf', noise=1e-10, porder=2):
         self.name = 'GPR'
         self.kernel_name = kernel
         self.noise = noise
@@ -24,8 +24,6 @@ class GPR(GaussianProcessRegressor):
             kernel = 1.0 * RBF(length_scale=1.0, length_scale_bounds=(0, 1e2))
         elif kernel == 'linear':
             kernel = 1.0 * DotProduct(sigma_0=1.0, sigma_0_bounds=(0.1, 1e5))
-        elif kernel == 'quadratic':
-            kernel = 1.0 * DotProduct(sigma_0=1.0, sigma_0_bounds=(0.1, 1e5)) ** 2
         elif kernel == 'polynomial':
             kernel = 1.0 * DotProduct(sigma_0=1.0, sigma_0_bounds=(0.1, 1e5)) ** self.porder
         return kernel
@@ -47,8 +45,6 @@ class GPR(GaussianProcessRegressor):
             self.length_scale = params['k2__length_scale']
         if self.kernel_name == 'linear':
             self.sigma_0 = params['k2__sigma_0']
-        if self.kernel_name == 'quadratic':
-            self.sigma_0 = params['k2__kernel__sigma_0']
         if self.kernel_name == 'polynomial':
             self.sigma_0 = params['k2__kernel__sigma_0']
         self.alpha = self.alpha_.ravel()
@@ -78,10 +74,6 @@ class GPR(GaussianProcessRegressor):
             k = self.constant_value * (
                 self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * self.x_train[:, j].reshape(-1, 1) for j in range(m))
             )
-        if self.kernel_name == 'quadratic':
-            k = self.constant_value * (
-                self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * self.x_train[:, j].reshape(-1, 1) for j in range(m))
-            ) ** 2
         if self.kernel_name == 'polynomial':
             k = self.constant_value * (
                 self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * self.x_train[:, j].reshape(-1, 1) for j in range(m))
@@ -102,10 +94,6 @@ class GPR(GaussianProcessRegressor):
                 k_ss = self.constant_value * (
                     self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * x[:, j].reshape(-1, 1) for j in range(m))
                 )
-            elif self.kernel_name == 'quadratic':
-                k_ss = self.constant_value * (
-                    self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * x[:, j].reshape(-1, 1) for j in range(m))
-                ) ** 2
             elif self.kernel_name == 'polynomial':
                 k_ss = self.constant_value * (
                     self.sigma_0 ** 2 + sum(x[:, j].reshape(1, -1) * x[:, j].reshape(-1, 1) for j in range(m))
