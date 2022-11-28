@@ -3,6 +3,7 @@ from skopt.space import Space
 from skopt.sampler import Lhs, Sobol
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+import math
 
 
 class DataHandler:
@@ -73,11 +74,14 @@ class DataHandler:
         
         elif method == 'grid':
             m = len(space)
-            n = int(n_samples ** (1/m))
+            n = math.ceil(n_samples ** (1/m))
             x1, x2 = np.linspace(*self.space[0], n), np.linspace(*self.space[1], n)
             x1_grid, x2_grid = np.meshgrid(x1, x2)
             grid = np.c_[x1_grid.ravel(), x2_grid.ravel()]
-            self.x = np.array(grid)
+            samples = np.array(grid)
+            np.random.shuffle(samples)
+            self.x = samples[:n_samples]
+            print(self.x)
     
 
     def split(self, test_size=0.3):
