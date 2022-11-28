@@ -119,7 +119,7 @@ class GPC:
             )
         sq_exp = self.sigma_f ** 2 * np.exp( - 0.5 / self.l ** 2 * sq_dist )
         
-        sq_exp = self.sigma_f ** 2 * (self.l ** 2 + sum(x1[:, j].reshape(1, -1) * x2[:, j].reshape(-1, 1) for j in range(x1.shape[1])))
+        sq_exp = self.sigma_f * (self.l ** 2 + sum(x1[:, j].reshape(1, -1) * x2[:, j].reshape(-1, 1) for j in range(x1.shape[1]))) ** 2
         
         return sq_exp
 
