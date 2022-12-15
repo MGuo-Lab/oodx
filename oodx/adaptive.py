@@ -5,7 +5,7 @@ import pyomo.environ as pyo
 import math
 import itertools
 
-from .formulations import SumoBlock
+from .formulations import OODXBlock
 
 
 class AdaptiveSampler:

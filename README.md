@@ -1,16 +1,12 @@
-<img
-  src="sumo.jpeg"
-  alt="A sumo"
-  width=150>
 
-## Sumomo: Surrogate Modelling and Optimisation
-Sumomo is a Python package, designed to be used in conjunction with *Pyomo*, for formulating surrogate models within larger decision-making problems. Surrogate models include Gaussian processes and neural networks for both regression and classification. Sumomo contains objects:
+## OODX - Object-Orientated Derivative-Free Optimisation
+OODX is a Python package, designed to be used in conjunction with *Pyomo*, for formulating surrogate models within larger decision-making problems. Surrogate models include Gaussian processes and neural networks for both regression and classification. Sumomo contains objects:
 
 * `DataHandler` for generating initial sampling strategies as well as processing and storing data
 * `GPR` and `GPC` for Gaussian process regression and classification models, respectively
 * `NN` for neural networks for regression or classification
+* `OODXBlock` for building abstracted *Pyomo* formulations from trained surrogate models
 * `AdaptiveSampler` for generating adaptive samples for surrogate modelling
-* `BlockFormulation` for building abstracted *Pyomo* formulations from trained surrogate models
 
 ## Surrogate modelling example
 ```python
@@ -19,8 +15,8 @@ from sklearn.metrics import (
     recall_score, 
     mean_squared_error
 )
-from sumomo import DataHandler, GPR, GPC
-from sumomo.examples import BlackBox
+from oodx import DataHandler, GPR, GPC
+from oodx.examples import BlackBox
 
 
 # initialise data handler
@@ -66,8 +62,8 @@ print(recall)
 
 ```python
 import pyomo.environ as pyo
-from sumomo.examples import BlackBox
-from sumomo import (
+from oodx.examples import BlackBox
+from oodx import (
     DataHandler, GPR, GPC, BlockFormulation
 )
 

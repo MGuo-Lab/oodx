@@ -1,7 +1,7 @@
 import pyomo.environ as pyo
 
 
-class SumoBlock:
+class OODXBlock:
 
     def __init__(self, model):
         self.model = model
