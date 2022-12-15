@@ -1,12 +1,12 @@
 from setuptools import setup
 
 setup(
-    name='sumomo',
-    packages=['sumomo'],
+    name='oodx',
+    packages=['oodx'],
     url='https://github.com/atdurkin/sumomo',
     license='MIT',
     author='alexdurkin',
     author_email='alexdurkin96@gmail.com',
-    description='Surrogate modelling and optimisation',
+    description='Object-Orientated Derivative Free Optimisation',
     long_desciption=open('README.md').read()
 )
