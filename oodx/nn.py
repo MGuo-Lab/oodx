@@ -37,7 +37,7 @@ class NN(nn.Sequential):
             permutation = torch.randperm(len(x_train))
             for i in range(0, len(x_train), batch_size):
                 idx = permutation[i:i+batch_size]
-                x_batch, y_batch = x_train[idx], y_train[idx]    
+                x_batch, y_batch = x_train[idx], y_train[idx]
                 predictions = self.forward(x_batch)
                 loss = loss_func(predictions, y_batch)
                 optimiser.zero_grad()
