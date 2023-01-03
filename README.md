@@ -1,5 +1,5 @@
 
-## OODX - Object-Orientated Derivative-Free Optimisation
+## OODX: Object-Orientated Derivative-Free Optimisation
 OODX is a Python package, designed to be used in conjunction with *Pyomo*, for formulating surrogate models within larger decision-making problems. Surrogate models include Gaussian processes and neural networks for both regression and classification. Sumomo contains objects:
 
 * `DataHandler` for generating initial sampling strategies as well as processing and storing data
