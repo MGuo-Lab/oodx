@@ -1,4 +1,4 @@
-from .data import DataHandler
+from .data import DataBlock
 from .nn import NN
 from .gp import GPR, GPC
 from .formulations import OODXBlock
