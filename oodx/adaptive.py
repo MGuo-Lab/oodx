@@ -19,7 +19,7 @@ class AdaptiveSampler:
         '''
         m = pyo.ConcreteModel()
         
-        block = OODXBlock(model)
+        block = MPBlock(model)
         m.mdl = block.get_formulation(return_std=True)
         
         m.n_inputs = set(range(len(self.space)))
@@ -64,7 +64,7 @@ class AdaptiveSampler:
         constant_value = model.constant_value
         m = pyo.ConcreteModel()
    
-        block = OODXBlock(model)
+        block = MPBlock(model)
         m.mdl = block.get_formulation()
         m.mdl_std = block.get_formulation(return_std=True)
 
