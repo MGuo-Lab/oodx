@@ -5,7 +5,7 @@ import pyomo.environ as pyo
 import math
 import itertools
 
-from .formulations import OODXBlock
+from .formulations import MPBlock
 
 
 class AdaptiveSampler:
