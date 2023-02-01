@@ -1,4 +1,4 @@
-name: sumomo-env
+name: oodx-env
 channels:
   - pytorch
   - conda-forge

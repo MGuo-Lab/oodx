@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name='oodx',
     packages=['oodx'],
-    url='https://github.com/atdurkin/sumomo',
+    url='https://github.com/atdurkin/OODX',
     license='MIT',
     author='alexdurkin',
     author_email='alexdurkin96@gmail.com',
