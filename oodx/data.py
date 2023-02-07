@@ -6,7 +6,7 @@ from skopt.sampler import Lhs, Sobol
 
 
 class DataBlock:
-    def __init__(self, inputs:list, outputs:list, targets:bool=False):
+    def __init__(self, inputs:list=[], outputs:list=[], targets:bool=False):
         '''
         inputs         -       list of strings for input variables names
         outputs        -       list of strings for input variables names
