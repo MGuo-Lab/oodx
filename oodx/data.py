@@ -129,7 +129,7 @@ class DataBlock:
         y              -       DataFrame of output variables to be scaled
         Returns a DataFrame of normalised y
         '''
-        return (y - self.mean_inputs) / self.std_inputs
+        return (y - self.mean_outputs) / self.std_outputs
     
     def inv_scale_outputs(self, y):
         '''
