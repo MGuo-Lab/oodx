@@ -33,7 +33,7 @@ class DataBlock:
         '''
         Returns a Series of input standard deviations
         '''
-        return self.data[self.inputs].std()
+        return self.data[self.inputs].std(ddof=0)
 
     @property
     def scaled_inputs(self):
@@ -58,9 +58,9 @@ class DataBlock:
         Returns a Series of output standard deviations accounting for infeasibilities
         '''
         if self.targets:
-            return self.data[self.data.t==1][self.outputs].std()
+            return self.data[self.data.t==1][self.outputs].std(ddof=0)
         else:
-            return self.data[self.outputs].std()
+            return self.data[self.outputs].std(ddof=0)
     
     @property
     def scaled_outputs(self):
