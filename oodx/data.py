@@ -104,9 +104,11 @@ class DataBlock:
             self.data[self.inputs] = sobol.generate(input_space.dimensions, n)
         elif method == 'grid':
             n_root = math.ceil(n ** (1/m))
-            x_coords = [np.linspace(*space[i], n_root) for i in range(m)]
+            x_coords = [np.linspace(*space[i], n_root).tolist() for i in range(m)]
             mg = np.meshgrid(*x_coords)
-            grid = np.array([val.ravel() for val in mg]).reshape((n_root**m, m))
+            grid = mg[0].reshape(-1, 1)
+            for i in range(1, len(mg)):
+                grid = np.c_[grid, mg[i].reshape(-1, 1)]
             np.random.shuffle(grid)
             self.data[self.inputs] = grid[:n]
     
