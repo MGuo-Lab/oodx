@@ -10,4 +10,5 @@ gurobi.log
 scripts/
 data/
 notebooks/
+examples/
 figures/
