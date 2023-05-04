@@ -42,5 +42,4 @@ solver = pyo.SolverFactory('baron')
 solver.solve(m)
 ```
 
-![example](https://user-images.githubusercontent.com/45121699/236180495-484838e6-0364-47cc-bef2-9ced10b88716.png)
-
+![example230504](https://user-images.githubusercontent.com/45121699/236182593-c06153e3-fe25-4696-8e5b-0215496acef4.png)
