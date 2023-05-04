@@ -14,6 +14,8 @@ pip install oodx
 ```
 
 # Example
+The following python code shows an example of surrogate-based optimisation using a Gaussian process regression model including interpretability of modelling uncertainty shown by the 95 % confidence interval.
+
 ```python
 from oodx import DataBlock, GPR, MPBlock
 import pyomo.environ as pyo
