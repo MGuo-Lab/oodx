@@ -43,3 +43,5 @@ m.obj = pyo.Objective(expr=m.gp_block.outputs[0], sense=pyo.minimize)
 solver = pyo.SolverFactory('baron')
 solver.solve(m)
 ```
+
+![example230504](https://user-images.githubusercontent.com/45121699/236184696-0e35b492-6f9a-4858-896d-a3285ce52728.png)
