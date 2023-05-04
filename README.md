@@ -43,3 +43,5 @@ solver.solve(m)
 ```
 
 ![example230504](https://user-images.githubusercontent.com/45121699/236182593-c06153e3-fe25-4696-8e5b-0215496acef4.png)
+
+<img src="[https://your-image-url.type](https://user-images.githubusercontent.com/45121699/236182593-c06153e3-fe25-4696-8e5b-0215496acef4.png)" width="100" height="100">
